@@ -7,7 +7,10 @@ const router = express.Router();
 router.post("/", catetoryController.createCategory);
 
 // Route lấy danh sách danh mục
-router.get("/", catetoryController.getCategories);
+router.get("/", catetoryController.getAllCategories);
+
+// Route lấy tên tất cả danh mục
+router.get('/all-names', catetoryController.getCategoryNames);
 
 // Route cập nhật danh mục
 router.put("/:id", catetoryController.updateCategory);

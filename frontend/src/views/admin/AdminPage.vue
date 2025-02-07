@@ -8,7 +8,6 @@
 
     <!-- Nội dung chính -->
     <div class="content" :class="{ 'full-width': !isSidebarOpen }">
-      <h1>Welcome to Admin</h1>
       <!-- Router view để hiển thị các trang con -->
       <router-view></router-view>
     </div>
@@ -45,6 +44,7 @@ export default {
 <style scoped>
 /* Nội dung chính được đẩy sang phải khi sidebar mở */
 .content {
+  margin-top: 50px;
   margin-left: 250px; /* Tương ứng với chiều rộng của sidebar khi sidebar mở */
   padding: 20px;
   transition: margin-left 0.3s ease;

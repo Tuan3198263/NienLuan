@@ -8,9 +8,11 @@ dotenv.config(); // Load biến môi trường từ file .env
 
 const app = express();
 
-
+const authRoutes = require('./api/authRoutes'); // Import routes
 const categoryRoutes = require("./api/categoryRoutes");
-const productRoutes = require("./api/productRoutes")
+const productRoutes = require("./api/productRoutes");
+const brandRoutes = require("./api/brandRoutes")
+const shippingAddressRoutes = require("./api/shippingAddressRoutes")
 
 // Kết nối tới MongoDB
 connectToDatabase();
@@ -18,12 +20,19 @@ connectToDatabase();
 app.use(bodyParser.json()); // Xử lý JSON từ body request
 app.use(cors()); // Cho phép cross-origin requests
 
+
+
 // Định nghĩa route cho danh mục
 app.use("/api/categories", categoryRoutes);
 //route sản phẩm
 app.use("/api/products", productRoutes);
+//route thương hiệu
+app.use("/api/brands", brandRoutes);
 
+app.use('/api/auth', authRoutes); // Sử dụng API cho authentication
 
+// Sử dụng các routes
+app.use('/api/shipping-address', shippingAddressRoutes); // Định nghĩa route cho địa chỉ nhận hàng
 
 // Định nghĩa route mặc định
 app.get("/", (req, res) => {

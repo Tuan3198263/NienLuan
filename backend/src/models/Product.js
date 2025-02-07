@@ -12,7 +12,8 @@ const ProductSchema = new mongoose.Schema({
     required: true,
   },
   brand: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId, // Tham chiếu đến collection Brands
+    ref: 'Brand', // Sử dụng 'Brand' thay vì 'String'
     required: true,
   },
   price: {

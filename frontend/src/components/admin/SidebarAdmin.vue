@@ -1,14 +1,14 @@
-<!-- src\components\admin\SidebarAdmin.vue-->
 <template>
   <div class="sidebar-admin">
     <!-- Header -->
     <div class="header">
-      <div class="avatar">
-        <img src="" alt="Admin Avatar" />
-      </div>
       <div class="header-icons">
         <i class="fas fa-bell"></i>
         <i class="fas fa-envelope"></i>
+      </div>
+      <!-- Cập nhật Avatar với viền tròn -->
+      <div class="avatar">
+        <img src="../../assets/tải xuống.jpg" alt="Admin" />
       </div>
     </div>
 
@@ -26,7 +26,7 @@
       <!-- Admin Info -->
       <div class="admin-info">
         <i class="fas fa-user-circle"></i>
-        <span>Admin Name</span>
+        <span class="">Tuan Le</span>
       </div>
 
       <!-- Menu List -->
@@ -64,7 +64,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
 
 // Khai báo sự kiện emit
@@ -83,58 +83,65 @@ const menuList = ref([
   },
   {
     id: 2,
+    name: "Thương hiệu",
+    icon: "fas fa-tags", // Biểu tượng dành cho thương hiệu
+
+    link: "/admin/brands", // Đường link đến trang Thương hiệu
+  },
+  {
+    id: 3,
+    name: "Danh mục sản phẩm",
+    icon: "fas fa-clipboard-list", // Biểu tượng dành cho danh mục sản phẩm
+    link: "/admin/categories", // Đường link đến trang Danh mục sản phẩm
+  },
+  {
+    id: 4,
     name: "Sản phẩm",
-    icon: "fas fa-box-open", // 'fa-users' thường dùng cho người dùng, 'fa-box-open' phù hợp hơn cho sản phẩm
+    icon: "fas fa-box-open", // Biểu tượng dành cho sản phẩm
     isOpen: false,
     subMenu: [
       {
         id: 1,
-        name: "Thương hiệu",
-        link: "/admin/products/brands", // Đổi đường link cho phù hợp với mục "Thương hiệu"
-        icon: "fas fa-tags", // 'fa-tags' là biểu tượng thích hợp cho thương hiệu
+        name: "Danh sách sản phẩm",
+        link: "/admin/products/list", // Đường link đến trang danh sách sản phẩm
+        icon: "fas fa-box", // Biểu tượng dành cho danh sách sản phẩm
       },
       {
         id: 2,
-        name: "Danh mục sản phẩm",
-        link: "/admin/products/categories", // Đảm bảo đường link rõ ràng cho danh mục sản phẩm
-        icon: "fas fa-clipboard-list", // 'fa-clipboard-list' là biểu tượng phù hợp cho danh mục sản phẩm
+        name: "Thêm sản phẩm",
+        link: "/admin/products/add", // Đường link đến trang thêm sản phẩm
+        icon: "fas fa-plus-circle", // Biểu tượng dành cho thêm sản phẩm
       },
-      {
-        id: 3,
-        name: "Sản phẩm",
-        link: "/products/add", // Cập nhật đường link cho trang thêm sản phẩm
-        icon: "fas fa-box-open", // 'fa-box-open' là biểu tượng thích hợp cho sản phẩm
-      },
-    ],
+    ], // Menu con cho Sản phẩm
   },
   {
-    id: 3,
+    id: 5,
     name: "Khách hàng",
     icon: "fas fa-users-cog", // 'fa-cogs' thường dùng cho cài đặt, 'fa-users-cog' dùng cho quản lý khách hàng
     isOpen: false,
     subMenu: [
       {
         id: 1,
-        name: "Cài đặt chung",
-        link: "/settings/general",
-        icon: "fas fa-cogs", // 'fa-cogs' vẫn hợp lý cho cài đặt chung
+        name: "Thông tin chung", // Đổi từ "Cài đặt chung" thành "Thông tin chung"
+        link: "/admin/user/information",
+        icon: "fas fa-user", // 'fa-user' hợp lý cho thông tin người dùng
       },
       {
         id: 2,
-        name: "Bảo mật",
-        link: "/settings/security",
-        icon: "fas fa-lock", // 'fa-lock' là biểu tượng cho bảo mật
+        name: "Đơn hàng", // Đổi từ "Bảo mật" thành "Đơn hàng"
+        link: "/settings/orders", // Cập nhật link cho đơn hàng
+        icon: "fas fa-box", // 'fa-box' hợp lý cho biểu tượng đơn hàng
       },
     ],
   },
   {
-    id: 4,
+    id: 6,
     name: "Logout",
     link: "/logout",
     icon: "fas fa-sign-out-alt", // 'fa-sign-out-alt' là biểu tượng chuẩn cho đăng xuất
   },
   {
-    id: 5,
+    id: 7,
     name: "Đánh giá",
     icon: "fas fa-chart-bar", // 'fa-chart-line' dùng cho đồ thị động, 'fa-chart-bar' dùng cho báo cáo tổng quan
     isOpen: false,
@@ -154,7 +161,7 @@ const menuList = ref([
     ],
   },
   {
-    id: 6,
+    id: 8,
     name: "Hỗ trợ",
     icon: "fas fa-life-ring", // 'fa-headset' là biểu tượng hỗ trợ, nhưng 'fa-life-ring' thường dùng cho hỗ trợ
     link: "/support",
@@ -193,12 +200,26 @@ const toggleSubmenu = (menuId) => {
   const menu = menuList.value.find((m) => m.id === menuId);
   if (menu) menu.isOpen = !menu.isOpen;
 };
+
+// Kiểm tra màn hình nhỏ hơn một kích thước và tự động đóng sidebar
+const checkScreenSize = () => {
+  if (window.innerWidth < 768) {
+    isSidebarOpen.value = false; // Đóng sidebar nếu màn hình nhỏ hơn 768px
+    emit("toggleSidebar", isSidebarOpen.value); // Phát sự kiện khi sidebar bị đóng
+  }
+};
 // Lấy trạng thái sidebar từ localStorage khi trang được tải lại
 onMounted(() => {
   const storedSidebarState = localStorage.getItem("isSidebarOpen");
   if (storedSidebarState !== null) {
     isSidebarOpen.value = JSON.parse(storedSidebarState);
   }
+  window.addEventListener("resize", checkScreenSize); // Lắng nghe sự kiện resize
+});
+
+// Dọn dẹp sự kiện resize khi component bị hủy
+onBeforeUnmount(() => {
+  window.removeEventListener("resize", checkScreenSize);
 });
 </script>
 
@@ -215,10 +236,10 @@ onMounted(() => {
 /* Header */
 .header {
   display: flex;
-  justify-content: space-between;
+  justify-content: end;
   align-items: center;
-  background-color: #1abc9c;
-  color: #ecf0f1;
+  background-color: #f2f9fc;
+  color: #adafaf;
   padding: 10px 20px;
   position: fixed;
   top: 0;
@@ -230,27 +251,35 @@ onMounted(() => {
   margin: 0; /* Loại bỏ margin */
 }
 
-.header .avatar img {
+/* Avatar */
+.avatar img {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: 50%; /* Tạo viền tròn cho avatar */
 }
 
+/* Căn chỉnh các icon và avatar bên phải */
 .header-icons {
+  cursor: pointer;
+  font-size: 1.25rem;
   display: flex;
-  gap: 15px;
+  gap: 20px;
+  order: 1; /* Đảm bảo các icon hiển thị trước avatar */
 }
 
-.header-icons i {
-  font-size: 1.5rem;
+.avatar {
   cursor: pointer;
-  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  order: 2; /* Đặt avatar ở cuối bên phải */
+  margin-left: 20px; /* Thêm khoảng cách giữa avatar và các icon */
 }
 
 /* Hamburger Menu */
 .hamburger-menu {
   position: fixed;
-  top: 65px;
+  top: 10px;
   left: 10px;
   font-size: 1.5rem;
   border: none;
@@ -258,10 +287,13 @@ onMounted(() => {
   cursor: pointer;
   z-index: 1100;
   transition: left 0.3s ease;
+  color: #0c0c0e; /* Màu mặc định của icon */
 }
 
 .hamburger-menu.menu-shift {
-  left: 190px;
+  top: 70px;
+  left: 210px;
+  color: rgb(240, 252, 246); /* Màu khi mở sidebar */
 }
 
 /* Sidebar */
@@ -270,7 +302,7 @@ onMounted(() => {
   top: 60px; /* Đặt khớp với chiều cao của header */
   left: 0;
   width: 250px;
-  height: calc(100% - 70px); /* Đặt chiều cao từ dưới header */
+  height: calc(100% - 60px); /* Đặt chiều cao từ dưới header */
   background-color: #34495e;
   color: #ecf0f1;
   transform: translateX(-100%);
@@ -278,6 +310,29 @@ onMounted(() => {
   z-index: 1000;
   margin: 0; /* Loại bỏ margin */
   padding: 0; /* Loại bỏ padding */
+  overflow-y: auto; /* Thêm thanh cuộn dọc */
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.sidebar::-webkit-scrollbar-track {
+  background: #2c3e50; /* Màu nền phù hợp với sidebar */
+  border-radius: 4px;
+}
+.sidebar::-webkit-scrollbar-thumb {
+  background: #95a5a6; /* Màu thumb phù hợp */
+  border-radius: 4px;
+}
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: #7f8c8d;
+}
+
+/* Cho Firefox */
+.sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: #95a5a6 #2c3e50;
 }
 
 .sidebar.open {
@@ -291,7 +346,12 @@ onMounted(() => {
   padding: 15px;
   font-size: 1.2rem;
   font-weight: bold;
+  position: sticky; /* Để cố định phần này */
+  top: 0; /* Đặt nó cố định ở trên cùng */
+  z-index: 1100; /* Đảm bảo nó hiển thị trên các phần tử khác */
+  width: 100%; /* Chiếm toàn bộ chiều rộng */
   background-color: #2c3e50;
+  gap: 10px;
 }
 
 .admin-info i {
@@ -325,7 +385,7 @@ onMounted(() => {
 }
 
 .menu-header:hover {
-  background-color: #1abc9c;
+  background-color: #2f7fc0;
 }
 
 .submenu-list {
@@ -343,7 +403,7 @@ onMounted(() => {
 }
 
 .submenu-list li:hover {
-  background-color: #16a085;
+  background-color: #2f7fc0;
 }
 
 /* Xóa định dạng mặc định của router-link trong submenu */
@@ -353,11 +413,6 @@ onMounted(() => {
   display: flex; /* Để căn chỉnh icon và text */
   align-items: center; /* Căn giữa icon và text theo chiều dọc */
   gap: 10px; /* Khoảng cách giữa icon và text */
-}
-
-.submenu-item:hover {
-  background-color: #16a085; /* Màu nền khi hover */
-  color: #ffffff; /* Màu chữ khi hover */
 }
 
 .submenu-item i {

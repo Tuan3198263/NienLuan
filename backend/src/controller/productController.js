@@ -1,5 +1,29 @@
-const Product = require('../models/Product');
+const Product = require('../models/product');
 const cloudinary = require('../config/cloudinaryConfig');
+
+
+
+// Lấy danh sách tất cả sản phẩm
+exports.getAllProducts = async (req, res) => {
+  try {
+    // Lấy toàn bộ danh sách sản phẩm từ MongoDB, kèm theo dữ liệu liên kết từ Category và Brand
+    const products = await Product.find()
+      .populate('category', 'name') // Lấy thông tin tên danh mục từ collection Category
+      .populate('brand', 'name') // Lấy thông tin tên thương hiệu từ collection Brand
+      .sort({ createdAt: -1 }); // Sắp xếp theo thời gian tạo mới nhất
+
+    // Trả về danh sách sản phẩm
+    res.status(200).json({
+      message: 'Danh sách tất cả sản phẩm',
+      totalProducts: products.length, // Tổng số sản phẩm
+      products, // Mảng chứa các sản phẩm
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Lỗi server', error });
+  }
+};
+
 
 // Thêm sản phẩm mới
 exports.createProduct = async (req, res) => {
@@ -86,7 +110,8 @@ exports.updateProduct = async (req, res) => {
     product.description = description || product.description;
     product.ingredients = ingredients || product.ingredients;
     product.usage = usage || product.usage;
-    product.stock = stock !== undefined ? stock : product.stock;
+    product.stock = stock || product.stock;
+  
 
     // Kiểm tra nếu có ảnh mới được tải lên
     if (req.files && req.files.length > 0) {
@@ -145,6 +170,24 @@ exports.toggleActiveStatus = async (req, res) => {
     // Lưu lại sản phẩm đã cập nhật
     await product.save();
     res.status(200).json({ message: 'Trạng thái sản phẩm đã được cập nhật!', product });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Lỗi server', error });
+  }
+};
+
+// Xóa sản phẩm
+exports.deleteProduct = async (req, res) => {
+  try {
+    const { productId } = req.params; // Lấy productId từ URL params
+
+    // Tìm và xóa sản phẩm trong database
+    const product = await Product.findByIdAndDelete(productId);
+    if (!product) {
+      return res.status(404).json({ message: 'Sản phẩm không tồn tại' });
+    }
+
+    res.status(200).json({ message: 'Sản phẩm đã được xóa!', product });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Lỗi server', error });

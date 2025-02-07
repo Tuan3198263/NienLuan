@@ -11,10 +11,9 @@ const categorySchema = new mongoose.Schema({
     type: String,
     unique: true, // Đảm bảo slug không trùng lặp
   },
-  parentId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Category", // Liên kết với chính collection Category (nếu là danh mục con)
-    default: null,
+  parentCategory: {  // Đổi tên từ parent sang parentCategory
+    type: String,
+    default: null,  // Nếu không có parent, mặc định là null
   },
   status: {
     type: String,
@@ -27,11 +26,11 @@ const categorySchema = new mongoose.Schema({
   },
 }, { timestamps: true }); // Tự động thêm createdAt và updatedAt
 
+// Tạo slug tự động khi tên danh mục thay đổi
 categorySchema.pre("save", function (next) {
   if (!this.isModified("name")) return next();
   this.slug = slugify(this.name, { lower: true, strict: true });
   next();
 });
-
 
 module.exports = mongoose.model("Category", categorySchema);
