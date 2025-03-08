@@ -1,5 +1,5 @@
 <template>
-  <div class="mt-5">
+  <div class="">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h4 class="fw-bold">Quản Lý Người Dùng</h4>
     </div>

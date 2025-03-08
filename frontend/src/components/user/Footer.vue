@@ -1,11 +1,11 @@
 <template>
-  <footer class="py-5 bg-dark text-light mt-4">
+  <footer class="py-5 bg-dark text-light">
     <div class="container">
       <!-- Logo -->
       <div class="text-center mb-4">
-        <span class="fs-2 fw-bold text-light">GLOW</span>
-        <span class="fs-2 fw-bold text-pink">I</span>
-        <span class="fs-2 fw-bold text-light">FY</span>
+        <span class="fs-2 fw-bold text-white">GL</span>
+        <span class="fs-2 fw-bold text-pink">O</span>
+        <span class="fs-2 fw-bold text-white">WN</span>
       </div>
 
       <!-- Footer Links -->
@@ -88,6 +88,7 @@
 footer {
   background-color: #222;
   color: #fff;
+  margin-top: 20px; /* Điều chỉnh padding-top thay vì margin-top */
 }
 footer .container {
   max-width: 1200px;
@@ -108,5 +109,10 @@ footer .text-light {
 }
 footer .text-pink {
   color: #ff69b4 !important;
+}
+@media (max-width: 768px) {
+  footer {
+    display: none;
+  }
 }
 </style>

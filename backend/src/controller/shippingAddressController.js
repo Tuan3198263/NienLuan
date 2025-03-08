@@ -3,7 +3,7 @@ const ShippingAddress = require('../models/shippingAddress');
 
 const updateShippingAddress = async (req, res) => {
   try {
-    const { fullName, phone, address, city, district, ward } = req.body;
+    const { fullName, phone, address, city, district, ward, cityName, districtName, wardName } = req.body;
     const userId = req.user.userId; // Lấy userId từ token
 
     // Tạo một đối tượng chỉ chứa các trường có giá trị
@@ -12,9 +12,12 @@ const updateShippingAddress = async (req, res) => {
     if (fullName) updateFields.fullName = fullName;
     if (phone) updateFields.phone = phone;
     if (address) updateFields.address = address;
-    if (city) updateFields.city = city;
-    if (district) updateFields.district = district;
-    if (ward) updateFields.ward = ward;
+    if (city) updateFields.city = city; // Lưu mã city
+    if (district) updateFields.district = district; // Lưu mã district
+    if (ward) updateFields.ward = ward; // Lưu mã ward
+    if (cityName) updateFields.cityName = cityName; // Lưu tên city
+    if (districtName) updateFields.districtName = districtName; // Lưu tên district
+    if (wardName) updateFields.wardName = wardName; // Lưu tên ward
 
     // Tìm và cập nhật hoặc tạo mới địa chỉ nhận hàng
     const addressData = await ShippingAddress.findOneAndUpdate(
@@ -38,6 +41,7 @@ const updateShippingAddress = async (req, res) => {
     });
   }
 };
+
 
 
 const getShippingAddress = async (req, res) => {

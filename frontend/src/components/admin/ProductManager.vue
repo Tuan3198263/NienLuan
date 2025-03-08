@@ -1,5 +1,5 @@
 <template>
-  <div class="mt-5">
+  <div class="">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h4 class="fw-bold">Quản Lý Sản Phẩm</h4>
       <button class="btn btn-primary" @click="goToAddProduct">
@@ -101,7 +101,7 @@
             {{ product.brand ? product.brand.name : "Không có thương hiệu" }}
           </td>
           <td>{{ formatCurrency(product.price) }}</td>
-          <td>{{ product.stock }}</td>
+          <td class="text-center">{{ product.stock }}</td>
           <td class="text-center">
             <button
               :class="['btn', product.active ? 'btn-success' : 'btn-secondary']"
@@ -141,33 +141,32 @@
     </table>
 
     <!-- Phân trang -->
+    <!-- Phân trang -->
     <nav>
       <ul class="pagination justify-content-center">
-        <li
-          class="page-item"
-          :class="{ disabled: currentPage === 1 }"
-          @click="changePage(currentPage - 1)"
-        >
-          <a class="page-link" href="#">Trước</a>
+        <li class="page-item" :class="{ disabled: currentPage === 1 }">
+          <button class="page-link" @click="changePage(currentPage - 1)">
+            Trước
+          </button>
         </li>
         <li
           class="page-item"
           v-for="page in totalPages"
           :key="page"
           :class="{ active: page === currentPage }"
-          @click="changePage(page)"
         >
-          <a class="page-link" href="#">{{ page }}</a>
+          <button class="page-link" @click="changePage(page)">
+            {{ page }}
+          </button>
         </li>
-        <li
-          class="page-item"
-          :class="{ disabled: currentPage === totalPages }"
-          @click="changePage(currentPage + 1)"
-        >
-          <a class="page-link" href="#">Tiếp theo</a>
+        <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+          <button class="page-link" @click="changePage(currentPage + 1)">
+            Tiếp theo
+          </button>
         </li>
       </ul>
     </nav>
+
     <!-- Modal Edit Product -->
     <EditProductForm
       :product="selectedProduct"
@@ -304,7 +303,8 @@ export default {
     };
     //view
     const viewProduct = (product) => {
-      console.log("View product:", product);
+      const productUrl = `/product/${product.slug}`; // Tạo URL từ slug sản phẩm
+      window.open(productUrl, "_blank"); // Mở URL trong tab mới
     };
 
     //edit
@@ -327,7 +327,8 @@ export default {
           text: "Hành động này không thể hoàn tác.",
           icon: "warning",
           showCancelButton: true,
-          confirmButtonText: "Chắc chắn",
+          confirmButtonColor: "#d33",
+          confirmButtonText: "Xóa",
           cancelButtonText: "Hủy",
         });
 
@@ -415,6 +416,11 @@ export default {
 .product-table td:nth-child(7),
 .product-table th:nth-child(7) {
   width: 100px; /* Điều chỉnh kích thước cột theo yêu cầu */
+}
+
+.product-table td:nth-child(1),
+.product-table th:nth-child(1) {
+  width: 15px; /* Điều chỉnh kích thước cột theo yêu cầu */
 }
 
 .pagination {

@@ -1,5 +1,4 @@
 <template>
-  <Header />
   <div class="signup-page">
     <!-- Signup Form Section -->
     <div class="form-container">
@@ -9,13 +8,11 @@
 </template>
 
 <script>
-import Header from "../../components/user/Header.vue"; // Import Header component
 import SignupForm from "../../components/user/SignupForm.vue"; // Import SignupForm component
 
 export default {
   name: "SignupPage",
   components: {
-    Header,
     SignupForm,
   },
 };
@@ -28,7 +25,6 @@ export default {
   align-items: center;
   justify-content: center;
   min-height: 70vh;
-  background-color: #f7f7f7;
   padding: 20px;
 }
 

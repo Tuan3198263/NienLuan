@@ -26,13 +26,25 @@ const shippingAddressSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  cityName: {
+    type: String,
+    required: true,  // Tên thành phố, sẽ lưu tên thay vì mã code
+  },
   district: {
     type: String,
     required: true,
   },
+  districtName: {
+    type: String,
+    required: true,  // Tên quận, sẽ lưu tên thay vì mã code
+  },
   ward: {
     type: String,
     required: true,
+  },
+  wardName: {
+    type: String,
+    required: true,  // Tên phường, sẽ lưu tên thay vì mã code
   },
   isDefault: {
     type: Boolean,

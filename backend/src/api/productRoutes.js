@@ -18,4 +18,16 @@ router.patch('/:productId/active', productController.toggleActiveStatus);
 // Route xóa sản phẩm
 router.delete('/:productId', productController.deleteProduct);
 
+
+// Route lấy sản phẩm theo slug danh mục
+router.get('/list/category/slug/:slug', productController.getProductsByCategorySlug);
+
+// API lấy thông tin sản phẩm theo slug
+router.get('/product-slug/:slug', productController.getProductBySlug);
+
+// Route tìm kiếm sản phẩm
+router.get('/search', productController.searchProducts);
+
+
+
 module.exports = router;

@@ -26,13 +26,15 @@ const app = createApp(App);
 
 // Cấu hình Toastification
 app.use(Toast, {
-  position: POSITION.TOP_RIGHT, // Đặt vị trí Toast ở góc đầu phải
-  timeout: 3000, // Thời gian hiển thị Toast là 3000ms (3 giây)
-  closeOnClick: true, // Tắt Toast khi click vào
-  pauseOnHover: true, // Tạm dừng Toast khi hover chuột
-  draggable: true, // Cho phép kéo thả Toast
-  draggablePercent: 0.7, // Điều chỉnh tỷ lệ kéo thả
+  position: POSITION.TOP_RIGHT, // Vẫn giữ vị trí TOP_RIGHT
+  timeout: 2000,
+  closeOnClick: true,
+  pauseOnHover: true,
+  draggable: true,
+  draggablePercent: 1,
+  transition: "Vue-Toastification__fade", // Chuyển sang hiệu ứng fade in/out
 });
+
 
 // Đăng ký vue-select
 app.component('v-select', vSelect); // Đăng ký component toàn cục

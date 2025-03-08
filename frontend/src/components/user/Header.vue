@@ -1,47 +1,72 @@
 <template>
   <header
-    class="d-flex align-items-center justify-content-between p-3 border-bottom"
+    class="d-flex align-items-center justify-content-between p-2 border-bottom fixed-header"
   >
-    <div class="d-flex align-items-center">
+    <div class="d-flex align-items-center" title="Glown">
       <router-link to="/" class="text-decoration-none">
-        <span class="fs-2 fw-bold text-dark">GLOW</span>
-        <span class="fs-2 fw-bold text-pink">I</span>
-        <span class="fs-2 fw-bold text-dark">FY</span>
+        <span class="fs-2 fw-bold text-dark">GL</span>
+        <span class="fs-2 fw-bold text-pink">O</span>
+        <span class="fs-2 fw-bold text-dark">WN</span>
       </router-link>
     </div>
     <div class="d-flex align-items-center">
-      <!-- Thanh tìm kiếm với biểu tượng bên trong -->
+      <!-- Thanh tìm kiếm -->
       <div class="search-input-container position-relative me-3">
         <input
+          v-model="searchQuery"
           type="text"
           class="form-control search-input"
           placeholder="Search..."
+          @keyup.enter="handleSearch"
         />
-        <i class="fas fa-search search-icon"></i>
+        <i
+          class="fas fa-search search-icon cursor-pointer"
+          @click="handleSearch"
+        ></i>
       </div>
 
-      <div class="position-relative me-3 cursor-pointer">
-        <i class="fas fa-shopping-bag fs-4 text-dark"></i>
-        <span
-          class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-pink"
-          >3</span
-        >
+      <div class="position-relative me-3 cursor-pointer" @click="goToCart">
+        <i
+          class="fas fa-shopping-bag fs-4 text-dark"
+          data-bs-toggle="tooltip"
+          data-bs-placement="bottom"
+          title="Giỏ hàng"
+        ></i>
       </div>
+
       <!-- Hiển thị nút Đăng nhập hoặc Hồ sơ và Đăng xuất -->
       <div class="d-flex align-items-center">
         <!-- Nếu chưa đăng nhập, hiển thị nút Đăng nhập -->
         <router-link v-if="!isLoggedIn" to="/login">
-          <i class="fas fa-user fs-4 text-dark me-3"></i>
+          <i
+            class="fas fa-user fs-4 text-dark me-3"
+            data-bs-toggle="tooltip"
+            data-bs-placement="bottom"
+            title="Đăng nhập"
+          ></i>
         </router-link>
 
-        <!-- Nếu đã đăng nhập, hiển thị icon Hồ sơ và Đăng xuất -->
+        <!-- Nếu đã đăng nhập, chỉ hiển thị ảnh đại diện và icon Đăng xuất -->
         <div v-if="isLoggedIn" class="d-flex align-items-center">
-          <router-link to="/profile">
-            <i class="fas fa-user-circle fs-4 text-dark me-3"></i>
-          </router-link>
+          <!-- Hiển thị ảnh đại diện người dùng và dẫn đến trang hồ sơ -->
+          <div v-if="avatarUrl" class="position-relative" @click="goToProfile">
+            <img
+              :src="avatarUrl"
+              alt="Avatar"
+              class="rounded-circle cursor-pointer me-3"
+              width="30"
+              height="30"
+              title="Hồ sơ"
+            />
+          </div>
+
+          <!-- Icon đăng xuất -->
           <div @click="handleLogout">
             <i
               class="fas fa-sign-out-alt fs-4 text-dark me-3 cursor-pointer"
+              data-bs-toggle="tooltip"
+              data-bs-placement="bottom"
+              title="Đăng xuất"
             ></i>
           </div>
         </div>
@@ -52,7 +77,6 @@
       </div>
     </div>
   </header>
-
   <!-- MENU DROPDOWN -->
   <transition name="slide">
     <div v-if="isMenuOpen" class="dropdown-menu-custom">
@@ -63,24 +87,19 @@
         <div
           class="d-flex justify-content-between align-items-center border-bottom p-3"
         >
-          <span class="fs-5 fw-bold text-dark">My Store</span>
+          <span class="fs-5 fw-bold text-dark">Glown</span>
         </div>
         <nav class="p-3">
           <ul class="list-unstyled">
             <li class="d-flex justify-content-between align-items-center py-2">
               <router-link to="/" class="text-dark text-decoration-none"
-                >Home</router-link
-              >
-            </li>
-            <li class="d-flex justify-content-between align-items-center py-2">
-              <router-link to="/blog" class="text-dark text-decoration-none"
-                >Blog</router-link
+                >Trang chủ</router-link
               >
             </li>
 
             <li class="d-flex justify-content-between align-items-center py-2">
               <router-link to="/brand" class="text-dark text-decoration-none"
-                >Brand</router-link
+                >Thương hiệu</router-link
               >
             </li>
             <li
@@ -88,28 +107,47 @@
               @click="toggleSubMenu('category')"
             >
               <div class="d-flex justify-content-between align-items-center">
-                <span>Category</span>
+                <span>Danh mục</span>
                 <i
                   class="fas fa-chevron-down"
                   :class="{ rotate: isSubMenuOpen('category') }"
                 ></i>
               </div>
               <ul v-if="isSubMenuOpen('category')" class="sub-menu">
-                <li><a href="#">Category 1</a></li>
-                <li><a href="#">Category 2</a></li>
-                <li><a href="#">Category 3</a></li>
+                <li>
+                  <router-link to="/category/cham-soc-da"
+                    >Chăm sóc da</router-link
+                  >
+                </li>
+                <li>
+                  <router-link to="/category/cham-soc-ca-nhan"
+                    >Chăm sóc cá nhân</router-link
+                  >
+                </li>
+                <li>
+                  <router-link to="/category/trang-diem"
+                    >Trang điểm</router-link
+                  >
+                </li>
+                <li>
+                  <router-link to="/category/phu-kien">Phụ kiện</router-link>
+                </li>
               </ul>
             </li>
             <li class="d-flex justify-content-between align-items-center py-2">
               <router-link to="/contact" class="text-dark text-decoration-none"
-                >Contact</router-link
+                >Liên hệ</router-link
               >
             </li>
           </ul>
         </nav>
         <div class="d-flex justify-content-center border-top p-3">
           <!-- Facebook -->
-          <a href="#" class="text-primary mx-2">
+          <a
+            href="https://www.facebook.com/profile.php?id=100009262266133"
+            class="text-primary mx-2"
+            target="_blank"
+          >
             <i class="fab fa-facebook-f"></i>
           </a>
           <!-- Twitter -->
@@ -136,15 +174,20 @@
 </template>
 
 <script>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
+import { useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 import { useAuthStore } from "../../store/AuthStore"; // Import store Pinia
+import axios from "axios";
 import Swal from "sweetalert2"; // Import SweetAlert2
 import { useToast } from "vue-toastification"; // Import Toast
 
 export default {
   name: "Header",
   setup() {
+    const route = useRoute(); // Lấy thông tin route hiện tại
     const authStore = useAuthStore();
+    const router = useRouter();
     const toast = useToast(); // Khởi tạo Toast
     const isMenuOpen = ref(false);
     const subMenuState = ref({
@@ -153,6 +196,28 @@ export default {
 
     // Kiểm tra trạng thái đăng nhập
     const isLoggedIn = computed(() => authStore.isLoggedIn);
+    const searchQuery = ref(""); // Thêm biến lưu giá trị tìm kiếm
+    const avatarUrl = ref(""); // Biến lưu URL ảnh đại diện
+
+    // Hàm gọi API lấy ảnh đại diện nếu đã đăng nhập
+    onMounted(async () => {
+      if (isLoggedIn.value) {
+        try {
+          const token = authStore.token; // Lấy token từ Pinia store
+          const response = await axios.get(
+            "http://localhost:3000/api/auth/avatar",
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          avatarUrl.value = response.data.avatar || "default-avatar-url.jpg"; // Nếu không có avatar, dùng ảnh mặc định
+        } catch (error) {
+          console.error("Lỗi khi lấy avatar:", error);
+        }
+      }
+    });
 
     // Xử lý sự kiện đăng xuất
     const handleLogout = () => {
@@ -169,12 +234,19 @@ export default {
           authStore.logout();
 
           // Hiển thị thông báo đăng xuất thành công bằng Toast
-          toast.success("Đăng xuất thành công!");
+          toast.success("Đăng xuất thành công");
 
           // Bạn có thể điều hướng đến trang login hoặc home sau khi logout
           router.push("/login"); // Hoặc /home tùy vào yêu cầu của bạn
         }
       });
+    };
+
+    // Hàm xử lý tìm kiếm
+    const handleSearch = () => {
+      if (searchQuery.value.trim() !== "") {
+        router.push(`/search/${encodeURIComponent(searchQuery.value.trim())}`);
+      }
     };
 
     const toggleMenu = () => {
@@ -189,19 +261,86 @@ export default {
       return subMenuState.value[menu];
     };
 
+    // Điều hướng đến trang hồ sơ
+    const goToProfile = () => {
+      router.push("/profile");
+    };
+
+    // Phương thức goToCart
+    const goToCart = () => {
+      if (isLoggedIn.value) {
+        // Nếu người dùng đã đăng nhập, điều hướng đến trang giỏ hàng
+        router.push("/cart");
+      } else {
+        // Nếu chưa đăng nhập, chuyển hướng đến trang login
+        toast.info("Vui lòng đăng nhập");
+        router.push({ name: "LoginPage", query: { redirect: "/cart" } });
+      }
+    };
+
+    // Theo dõi sự thay đổi của route và reset searchQuery nếu không phải ProductSearchPage
+    watch(
+      () => route.path,
+      (newPath) => {
+        if (!newPath.startsWith("/search")) {
+          searchQuery.value = "";
+        }
+      }
+    );
+
+    // Theo dõi sự thay đổi của isLoggedIn
+    watch(
+      () => isLoggedIn.value,
+      async (newVal) => {
+        if (newVal) {
+          try {
+            const token = authStore.token; // Lấy token từ Pinia store
+            const response = await axios.get(
+              "http://localhost:3000/api/auth/avatar",
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+            avatarUrl.value = response.data.avatar || "default-avatar-url.jpg"; // Cập nhật avatar
+          } catch (error) {
+            console.error("Lỗi khi lấy avatar:", error);
+          }
+        } else {
+          avatarUrl.value = ""; // Nếu chưa đăng nhập, xóa avatar
+        }
+      }
+    );
+
     return {
       isLoggedIn,
+      avatarUrl,
       handleLogout,
       isMenuOpen,
       toggleMenu,
       toggleSubMenu,
       isSubMenuOpen,
+      searchQuery, // Thêm biến vào return để binding với input
+      handleSearch, // Thêm hàm xử lý tìm kiếm
+      goToProfile,
+      goToCart,
     };
   },
 };
 </script>
 
 <style scoped>
+.fixed-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000; /* Ensure it is above other content */
+  background-color: white; /* Optional: ensures the header stays visible */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Optional: adds shadow for visibility */
+}
+
 .text-pink {
   color: pink;
 }
@@ -230,11 +369,15 @@ export default {
 .slide-leave-active {
   transition: transform 0.4s ease-in-out;
 }
-.slide-enter {
-  transform: translateX(-100%);
-}
+
+.slide-enter-from,
 .slide-leave-to {
   transform: translateX(-100%);
+}
+
+.slide-enter-to,
+.slide-leave-from {
+  transform: translateX(0);
 }
 
 /* MENU DROPDOWN */
@@ -250,7 +393,7 @@ export default {
   padding: 15px;
   z-index: 1000;
   overflow-y: auto;
-  transition: transform 0.4s ease-in-out;
+  /* Xóa transform mặc định ở đây */
 }
 
 /* Nút đóng */
@@ -294,7 +437,7 @@ export default {
 }
 
 .sub-menu li a:hover {
-  color: #ff4081;
+  color: #6fb5ca;
 }
 
 /* Hiệu ứng quay cho mũi tên */
@@ -326,5 +469,15 @@ nav ul li:hover {
 }
 .cursor-pointer {
   cursor: pointer;
+}
+/* Ẩn search input khi màn hình nhỏ (ví dụ, nhỏ hơn 768px) */
+@media (max-width: 768px) {
+  .search-input-container {
+    width: 100px; /* Hoặc điều chỉnh theo mong muốn */
+  }
+
+  .search-input {
+    width: 100%;
+  }
 }
 </style>

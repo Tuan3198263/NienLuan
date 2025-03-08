@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const cloudinary = require('cloudinary').v2;
 
 
 // API lấy tất cả người dùng
@@ -26,6 +27,42 @@ exports.register = async (req, res) => {
         await newUser.save();
 
         res.status(201).json({ message: 'Đăng ký thành công!' });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi máy chủ.', error: error.message });
+    }
+};
+
+
+
+// Đăng ký Admin với mã xác thực
+exports.registerAdmin = async (req, res) => {
+    try {
+        const { fullName, email, password, phone, verificationCode } = req.body; // Mã xác thực từ đầu vào
+
+        const validVerificationCode = process.env.ADMIN_VERIFICATION_CODE; // Mã xác thực lưu trong biến môi trường
+        if (verificationCode !== validVerificationCode) {
+            return res.status(400).json({ message: 'Mã xác thực không hợp lệ.' });
+        }
+
+        // Kiểm tra nếu email đã tồn tại
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: 'Email đã được sử dụng.' });
+        }
+
+        // Tạo một người dùng mới với vai trò là "admin"
+        const newUser = new User({ 
+            fullName, 
+            email, 
+            password, 
+            phone,
+            role: 'admin' // Đặt vai trò là "admin"
+        });
+
+        // Lưu vào cơ sở dữ liệu
+        await newUser.save();
+
+        res.status(201).json({ message: 'Tạo tài khoản admin thành công!' });
     } catch (error) {
         res.status(500).json({ message: 'Lỗi máy chủ.', error: error.message });
     }
@@ -148,4 +185,101 @@ exports.getUserById = async (req, res) => {
         res.status(500).json({ message: 'Lỗi máy chủ.', error: error.message });
     }
 };
+
+
+// API cập nhật ảnh đại diện người dùng
+exports.updateAvatar = async (req, res) => {
+  try {
+    // Kiểm tra xem có token trong header không
+    const token = req.headers.authorization?.split(' ')[1]; // Lấy token từ header
+
+    if (!token) {
+      return res.status(401).json({ message: 'Vui lòng đăng nhập.' });
+    }
+
+    // Xác thực token và lấy userId
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
+
+    // Kiểm tra xem người dùng có tồn tại không
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Người dùng không tồn tại.' });
+    }
+
+    // Kiểm tra xem có file ảnh trong yêu cầu không
+    if (!req.file) {
+      return res.status(400).json({ message: 'Vui lòng tải lên ảnh đại diện.' });
+    }
+
+    // Upload ảnh lên Cloudinary
+    const result = await new Promise((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        {
+          resource_type: 'image',
+          folder: 'user_avatars', // Thư mục trên Cloudinary dành riêng cho ảnh đại diện người dùng
+        },
+        (error, result) => {
+          if (error) {
+            reject(error);
+          }
+          resolve(result);
+        }
+      ).end(req.file.buffer);  // Sử dụng buffer của file tải lên
+    });
+
+    // Lấy URL của ảnh từ Cloudinary
+    const avatarUrl = result.secure_url;
+
+    // Cập nhật URL ảnh đại diện vào cơ sở dữ liệu
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { avatar: avatarUrl },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'Người dùng không tồn tại.' });
+    }
+
+    res.json({
+      message: 'Cập nhật ảnh đại diện thành công!',
+      avatar: avatarUrl,
+      user: updatedUser,
+    });
+  } catch (error) {
+    // Kiểm tra lỗi xác thực token
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Token không hợp lệ.' });
+    }
+
+    // Lỗi server hoặc Cloudinary
+    res.status(500).json({ message: 'Lỗi máy chủ.', error: error.message });
+  }
+};
+
+// API lấy ảnh đại diện người dùng
+exports.getAvatar = async (req, res) => {
+  try {
+    // Lấy userId từ token (req.user.userId đã được thêm vào sau khi xác thực token)
+    const userId = req.user.userId;
+
+    // Tìm người dùng trong cơ sở dữ liệu dựa trên userId từ token
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'Người dùng không tồn tại.' });
+    }
+
+
+    // Trả về URL ảnh đại diện
+    res.json({
+      message: 'Lấy ảnh đại diện thành công!',
+      avatar: user.avatar,  // URL ảnh avatar
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi máy chủ.', error: error.message });
+  }
+};
+
 

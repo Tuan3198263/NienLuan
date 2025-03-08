@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white p-4 rounded-lg shadow-lg">
+  <div class="bg-white p-4 rounded-lg shadow-md">
     <h2 class="h4 font-weight-bold mb-4">Địa chỉ nhận hàng</h2>
 
     <!-- Phần hiển thị thông tin địa chỉ hiện có -->
@@ -9,6 +9,10 @@
         <p><strong>Họ và tên:</strong> {{ addressData.fullName }}</p>
         <p><strong>Số điện thoại:</strong> {{ addressData.phone }}</p>
         <p><strong>Địa chỉ:</strong> {{ addressData.address }}</p>
+        <p class="text-secondary fw-bold">
+          {{ addressData.wardName }}, {{ addressData.districtName }},
+          {{ addressData.cityName }}
+        </p>
       </div>
       <div v-else>
         <p class="text-danger">
@@ -120,6 +124,9 @@ const address = ref({
   city: "",
   district: "",
   ward: "",
+  cityName: "",
+  districtName: "",
+  wardName: "",
 });
 
 // Dữ liệu hiển thị thông tin địa chỉ đã lưu (nếu có)
@@ -210,16 +217,43 @@ const saveAddress = async () => {
     !address.value.district ||
     !address.value.ward
   ) {
-    toast.error("Vui lòng nhập đầy đủ thông tin!");
+    toast.error("Vui lòng nhập đầy đủ thông tin");
     return; // Dừng submit nếu có trường chưa được điền
   }
 
-  // Kiểm tra số điện thoại hợp lệ (bắt đầu bằng 0 và có 10 hoặc 11 chữ số)
-  const phoneRegex = /^0\d{9,10}$/;
-  if (!phoneRegex.test(address.value.phone)) {
-    toast.error("Số điện thoại không hợp lệ!");
+  // Kiểm tra họ và tên: không chứa số, ký tự đặc biệt, tối đa 50 ký tự
+  const nameRegex = /^[A-Za-zÀ-Ỹà-ỹ\s]{1,50}$/;
+  if (!nameRegex.test(address.value.fullName.trim())) {
+    toast.error(
+      "Tên không hợp lệ. Chỉ chứa chữ cái và khoảng trắng, tối đa 50 ký tự."
+    );
+    return false;
+  }
+
+  // Kiểm tra số điện thoại hợp lệ
+  const phoneRegex = /^(0[2-9]\d{8})$/;
+  if (!phoneRegex.test(address.value.phone.trim())) {
+    toast.error("Số điện thoại không hợp lệ");
     return;
   }
+
+  // Kiểm tra độ dài địa chỉ (không quá 100 ký tự)
+  if (address.value.address.trim().length > 100) {
+    toast.error("Địa chỉ không được vượt quá 100 ký tự.");
+    return;
+  }
+
+  // Lưu tên của các trường (cityName, districtName, wardName)
+  address.value.cityName =
+    cities.value.find((city) => city.ProvinceID === address.value.city)
+      ?.ProvinceName || "";
+  address.value.districtName =
+    districts.value.find(
+      (district) => district.DistrictID === address.value.district
+    )?.DistrictName || "";
+  address.value.wardName =
+    wards.value.find((ward) => ward.WardCode === address.value.ward)
+      ?.WardName || "";
 
   // Hiển thị SweetAlert2 xác nhận trước khi gửi
   const result = await Swal.fire({
@@ -246,15 +280,15 @@ const saveAddress = async () => {
         }
       );
       if (response.data.success) {
-        toast.success("Địa chỉ đã được lưu thành công!");
+        toast.success("Địa chỉ đã được lưu thành công");
         // Cập nhật lại thông tin hiển thị sau khi lưu
         addressData.value = response.data.data;
       } else {
-        toast.error("Có lỗi xảy ra khi lưu địa chỉ!");
+        toast.error("Có lỗi xảy ra khi lưu địa chỉ");
       }
     } catch (error) {
       console.error("Lỗi khi lưu địa chỉ:", error);
-      toast.error("Lỗi khi lưu địa chỉ. Vui lòng thử lại!");
+      toast.error("Lỗi khi lưu địa chỉ. Vui lòng thử lại");
     }
   }
 };
@@ -265,7 +299,7 @@ const saveAddress = async () => {
   border-radius: 10px;
 }
 
-.shadow-lg {
+.shadow-md {
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -281,5 +315,36 @@ const saveAddress = async () => {
 
 .custom-select {
   width: 100%;
+}
+/* Tùy chỉnh dropdown menu */
+:deep(.vs__dropdown-menu) {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 4px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Tùy chỉnh hover state */
+:deep(.vs__dropdown-option--highlight) {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+/* Tùy chỉnh input field */
+:deep(.vs__search) {
+  border-radius: 6px;
+}
+
+/* Tùy chỉnh border khi focus */
+:deep(.vs__dropdown-toggle) {
+  border-radius: 6px;
+  transition: border-color 0.2s;
+}
+
+:deep(.vs--open .vs__dropdown-toggle) {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
 }
 </style>

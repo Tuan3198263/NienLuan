@@ -8,7 +8,7 @@
       </div>
       <!-- Cập nhật Avatar với viền tròn -->
       <div class="avatar">
-        <img src="../../assets/tải xuống.jpg" alt="Admin" />
+        <img :src="avatarUrl || '/default-avatar.png'" alt="Admin Avatar" />
       </div>
     </div>
 
@@ -66,7 +66,12 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
+import axios from "axios";
+import { useAuthStore } from "../../store/AuthStore"; // Import store Pinia
 
+const avatarUrl = ref(""); // Biến lưu URL ảnh avatar
+// Khởi tạo store
+const authStore = useAuthStore();
 // Khai báo sự kiện emit
 const emit = defineEmits();
 
@@ -134,48 +139,53 @@ const menuList = ref([
       },
     ],
   },
+
   {
     id: 6,
-    name: "Logout",
-    link: "/logout",
-    icon: "fas fa-sign-out-alt", // 'fa-sign-out-alt' là biểu tượng chuẩn cho đăng xuất
-  },
-  {
-    id: 7,
-    name: "Đánh giá",
-    icon: "fas fa-chart-bar", // 'fa-chart-line' dùng cho đồ thị động, 'fa-chart-bar' dùng cho báo cáo tổng quan
+    name: "Đơn hàng",
+    icon: "fas fa-box", // 'fa-chart-line' dùng cho đồ thị động, 'fa-chart-bar' dùng cho báo cáo tổng quan
     isOpen: false,
     subMenu: [
       {
         id: 1,
-        name: "Báo cáo bán hàng",
-        link: "/reports/sales",
+        name: "Danh sách đơn hàng",
+        link: "/admin/orders/list",
         icon: "fas fa-chart-pie", // 'fa-chart-pie' thích hợp cho báo cáo bán hàng
       },
       {
         id: 2,
-        name: "Hoạt động người dùng",
-        link: "/reports/activity",
+        name: "Tìm đơn hàng",
+        link: "/admin/orders/search",
         icon: "fas fa-user-check", // 'fa-user-check' phù hợp cho hoạt động người dùng
       },
     ],
   },
   {
-    id: 8,
-    name: "Hỗ trợ",
-    icon: "fas fa-life-ring", // 'fa-headset' là biểu tượng hỗ trợ, nhưng 'fa-life-ring' thường dùng cho hỗ trợ
-    link: "/support",
-  },
-  {
     id: 7,
-    name: "Tài liệu API",
-    icon: "fas fa-file-code", // 'fa-book' có thể được thay bằng 'fa-file-code' cho tài liệu lập trình
-    link: "/api-docs",
+    name: "Home",
+    link: "/",
+    icon: "fas fa-home",
   },
 ]);
 
 // Khởi tạo router
 const router = useRouter();
+
+// Hàm lấy avatar từ API
+const fetchAvatar = async () => {
+  try {
+    const token = authStore.token; // Lấy token từ Pinia store
+    const response = await axios.get("http://localhost:3000/api/auth/avatar", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    avatarUrl.value = response.data.avatar; // Giả sử API trả về { avatar: "URL_HINH_ANH" }
+  } catch (error) {
+    console.error("Lỗi khi tải avatar:", error);
+    avatarUrl.value = "/default-avatar.png"; // Ảnh mặc định nếu lỗi
+  }
+};
 
 // Hàm để toggle sidebar
 const toggleSidebar = () => {
@@ -215,6 +225,7 @@ onMounted(() => {
     isSidebarOpen.value = JSON.parse(storedSidebarState);
   }
   window.addEventListener("resize", checkScreenSize); // Lắng nghe sự kiện resize
+  fetchAvatar();
 });
 
 // Dọn dẹp sự kiện resize khi component bị hủy

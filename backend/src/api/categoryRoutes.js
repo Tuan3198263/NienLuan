@@ -1,21 +1,27 @@
 const express = require("express");
-const catetoryController = require("../controller/categoryController");
+const categoryController = require("../controller/categoryController");
 
 const router = express.Router();
 
 // Route tạo danh mục mới
-router.post("/", catetoryController.createCategory);
+router.post("/", categoryController.createCategory);
 
 // Route lấy danh sách danh mục
-router.get("/", catetoryController.getAllCategories);
+router.get("/", categoryController.getAllCategories);
 
 // Route lấy tên tất cả danh mục
-router.get('/all-names', catetoryController.getCategoryNames);
+router.get('/all-names', categoryController.getCategoryNames);
 
 // Route cập nhật danh mục
-router.put("/:id", catetoryController.updateCategory);
+router.put("/:id", categoryController.updateCategory);
 
 // Route xóa danh mục
-router.delete("/:id", catetoryController.deleteCategory);
+router.delete("/:id", categoryController.deleteCategory);
+
+
+// 🟠 Lấy danh mục theo slug
+router.get("/slug/:slug", categoryController.getCategoryBySlug);
+
+
 
 module.exports = router;

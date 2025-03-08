@@ -72,7 +72,7 @@ const getUserInfo = async () => {
   try {
     const token = authStore.token; // Lấy token từ Pinia store
     if (!token) {
-      toast.error("Token không hợp lệ hoặc chưa đăng nhập!");
+      toast.error("Token không hợp lệ hoặc chưa đăng nhập");
       return;
     }
 
@@ -92,16 +92,25 @@ const getUserInfo = async () => {
 
 // Hàm để kiểm tra thông tin trước khi gửi
 const validateProfile = () => {
-  // Kiểm tra số điện thoại (phải bắt đầu bằng 0 và có 10-11 chữ số)
-  const phoneRegex = /^0\d{9,10}$/;
-  if (!phoneRegex.test(user.value.phone)) {
-    toast.error("Số điện thoại không hợp lệ!");
+  // Kiểm tra họ và tên: không chứa số, ký tự đặc biệt, tối đa 50 ký tự
+  const nameRegex = /^[A-Za-zÀ-Ỹà-ỹ\s]{1,50}$/;
+  if (!nameRegex.test(user.value.fullName.trim())) {
+    toast.error(
+      "Tên không hợp lệ. Chỉ chứa chữ cái và khoảng trắng, tối đa 50 ký tự."
+    );
+    return false;
+  }
+
+  // Kiểm tra số điện thoại (bắt đầu bằng 0, có đúng 10 chữ số)
+  const phoneRegex = /^(0[2-9]\d{8})$/;
+  if (!phoneRegex.test(user.value.phone.trim())) {
+    toast.error("Số điện thoại không hợp lệ.");
     return false;
   }
 
   // Kiểm tra mật khẩu (phải từ 6 ký tự trở lên)
   if (user.value.password.length < 6) {
-    toast.error("Mật khẩu phải có ít nhất 6 ký tự.");
+    toast.error("Mật khẩu phải có ít nhất 6 ký tự");
     return false;
   }
 
@@ -154,10 +163,10 @@ const updateProfile = async () => {
     console.log("Profile updated:", response); // Kiểm tra phản hồi sau khi cập nhật
 
     // Hiển thị thông báo toast sau khi cập nhật thành công
-    toast.success("Thông tin cá nhân đã được cập nhật!");
+    toast.success("Thông tin cá nhân đã được cập nhật");
   } catch (error) {
     console.error("Không thể cập nhật thông tin người dùng:", error);
-    toast.error("Đã có lỗi xảy ra khi cập nhật thông tin.");
+    toast.error("Đã có lỗi xảy ra khi cập nhật thông tin");
   }
 };
 
@@ -181,6 +190,6 @@ onMounted(() => {
 }
 
 .shadow-md {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
 }
 </style>

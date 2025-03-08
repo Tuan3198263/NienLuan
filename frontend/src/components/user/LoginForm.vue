@@ -101,7 +101,7 @@ export default {
         authStore.setAuth(response.data.token);
 
         // Hiển thị thông báo đăng nhập thành công
-        toast.success("Đăng nhập thành công!");
+        toast.success("Đăng nhập thành công");
 
         // Chuyển hướng tới trang Dashboard
         router.push("/");

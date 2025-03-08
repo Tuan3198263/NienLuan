@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema({
     trim: true,
     default: "",
   },
+   avatar: {
+    type: String,
+    default: 'https://cdn-icons-png.flaticon.com/512/6596/6596121.png', // URL của ảnh đại diện mặc định
+  },
   role: {
     type: String,
     enum: ['customer', 'admin'],

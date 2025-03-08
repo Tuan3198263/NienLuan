@@ -17,4 +17,11 @@ router.put('/:brandId',upload.single('logo'), brandController.updateBrand);
 //xóa
 router.delete('/:brandId', brandController.deleteBrand); // Xóa thương hiệu
 
+// Đảm bảo rằng đường dẫn API phù hợp
+router.get('/brands-by-category/:categorySlug', brandController.getBrandsByCategory);
+
+// Định nghĩa API tìm kiếm thương hiệu
+router.get('/search', brandController.getBrandsByProductKeyword);
+
+
 module.exports = router;

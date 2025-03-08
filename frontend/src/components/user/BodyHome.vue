@@ -1,5 +1,5 @@
 <template>
-  <main class="body-home">
+  <main class="body-home mt-2">
     <!-- Banner Section with Bootstrap Carousel -->
     <section class="banner">
       <div
@@ -10,21 +10,21 @@
         <div class="carousel-inner">
           <div class="carousel-item active">
             <img
-              src="https://static0.gamerantimages.com/wordpress/wp-content/uploads/2022/03/Attack-on-Titan-Reiner-Braun-Sad-Moments.jpg"
+              src="https://i.pinimg.com/736x/ff/17/47/ff17475f9dbdc283bde34cac48ab3091.jpg"
               class="d-block w-100"
               alt="Banner 1"
             />
           </div>
           <div class="carousel-item">
             <img
-              src="https://staticg.sportskeeda.com/editor/2023/11/1f114-16999636013931-1920.jpg"
+              src="https://i.ytimg.com/vi/Vo4eCY-QX7k/maxresdefault.jpg?sqp=-oaymwEmCIAKENAF8quKqQMa8AEB-AHyCYAC0AWKAgwIABABGHIgQChuMA8=&rs=AOn4CLBFusE1adXPJp0ftRI_GB8NIxzSMA"
               class="d-block w-100"
               alt="Banner 2"
             />
           </div>
           <div class="carousel-item">
             <img
-              src="https://a.storyblok.com/f/178900/640x360/ec45e80cb7/759b1dcfad9ce6ef675919b48052c0be1644997413_main.jpg/m/filters:quality(95)format(webp)"
+              src="https://i.pinimg.com/736x/fd/a5/dd/fda5dd08038c1708dbc8187fe660b97e.jpg"
               class="d-block w-100"
               alt="Banner 3"
             />
@@ -302,11 +302,6 @@ body {
   background-color: #f8f9fa;
 }
 
-.card-img-top {
-  object-fit: cover;
-  height: 300px;
-}
-
 .card {
   transition: transform 0.3s ease;
 }
@@ -320,7 +315,6 @@ body {
 }
 
 .carousel-item img {
-  max-height: 500px;
   object-fit: cover;
 }
 

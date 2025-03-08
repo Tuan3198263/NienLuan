@@ -6,7 +6,7 @@ const storage = multer.memoryStorage(); // Lưu trữ ảnh trực tiếp trong 
 
 // Chỉ chấp nhận file ảnh
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|gif/;
+  const allowedTypes = /jpeg|jpg|png|gif|jfif|webp/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
   const mimetype = allowedTypes.test(file.mimetype);
 

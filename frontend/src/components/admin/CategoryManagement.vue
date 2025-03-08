@@ -1,7 +1,7 @@
 <template>
   <!-- Nội dung chính -->
   <div class="">
-    <div class="d-flex justify-content-between align-items-center mb-4 mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
       <h4>Danh Mục Sản Phẩm</h4>
       <button
         class="btn btn-primary mb-3"
@@ -57,17 +57,6 @@
                   class="form-control"
                   required
                 ></textarea>
-              </div>
-              <div class="mb-3">
-                <label for="parentCategory" class="form-label"
-                  >Danh mục cha</label
-                >
-                <input
-                  type="text"
-                  id="parentCategory"
-                  v-model="newCategory.parentCategory"
-                  class="form-control"
-                />
               </div>
 
               <!-- Thay đổi thành select cho trạng thái -->
@@ -128,15 +117,7 @@
                 placeholder="Tìm kiếm..."
               />
             </th>
-            <th>
-              Danh Mục Cha
-              <input
-                type="text"
-                class="form-control form-control-sm"
-                v-model="searchParentCategory"
-                placeholder="Tìm kiếm..."
-              />
-            </th>
+
             <th>
               Trạng Thái
               <select
@@ -144,8 +125,8 @@
                 v-model="searchStatus"
               >
                 <option value="">Tất cả</option>
-                <option value="active">Hoạt động</option>
-                <option value="inactive">Không hoạt động</option>
+                <option value="active">Đang bán</option>
+                <option value="inactive">Tạm ẩn</option>
               </select>
             </th>
             <th>Hành động</th>
@@ -158,10 +139,11 @@
             v-for="(category, index) in paginatedCategories"
             :key="category._id"
           >
-            <td>{{ index + 1 }}</td>
+            <td>{{ (currentPage - 1) * itemsPerPage + index + 1 }}</td>
+            <!-- Sửa STT -->
             <td>{{ category.name }}</td>
             <td>{{ category.description }}</td>
-            <td>{{ category.parentCategory || "Không có" }}</td>
+
             <td>
               <span class="status-toggle">
                 <i
@@ -255,17 +237,6 @@
                   required
                 ></textarea>
               </div>
-              <div class="mb-3">
-                <label for="editParentCategory" class="form-label"
-                  >Danh mục cha</label
-                >
-                <input
-                  type="text"
-                  id="editParentCategory"
-                  v-model="selectedCategory.parentCategory"
-                  class="form-control"
-                />
-              </div>
 
               <!-- Thay đổi thành select cho trạng thái -->
               <div class="mb-3">
@@ -351,20 +322,6 @@
                   class="form-control"
                   readonly
                 ></textarea>
-              </div>
-
-              <!-- Nhóm thông tin liên quan đến danh mục cha -->
-              <div class="mb-3">
-                <label for="viewParentCategory" class="form-label"
-                  >Danh mục cha</label
-                >
-                <input
-                  type="text"
-                  id="viewParentCategory"
-                  v-model="selectedCategory.parentCategory"
-                  class="form-control"
-                  readonly
-                />
               </div>
 
               <!-- Nhóm trạng thái (hiển thị như các trường khác) -->
@@ -481,7 +438,6 @@ export default {
         newCategory.value = {
           name: "",
           description: "",
-          parentCategory: "",
           status: "active",
         };
 
@@ -533,9 +489,6 @@ export default {
           (item.description?.toLowerCase() || "").includes(
             searchDescription.value.toLowerCase()
           ) &&
-          (item.parentCategory?.toLowerCase() || "").includes(
-            searchParentCategory.value.toLowerCase()
-          ) &&
           (searchStatus.value === "" || itemStatus === statusFilter) // Kiểm tra chính xác trạng thái
         );
       });
@@ -564,7 +517,6 @@ export default {
       selectedCategory.value = { ...category }; // Sao chép thông tin danh mục được chọn
     };
 
-    // hàm xóa danh mục
     const deleteCategory = async (categoryId) => {
       // Sử dụng SweetAlert2 để xác nhận xóa
       const result = await Swal.fire({
@@ -581,16 +533,32 @@ export default {
       if (result.isConfirmed) {
         try {
           // Tiến hành xóa nếu người dùng xác nhận
-          await axios.delete(
+          const response = await axios.delete(
             `http://localhost:3000/api/categories/${categoryId}`
           );
-          // Thông báo thành công
-          toast.success("Danh mục đã được xóa!");
+
+          // Kiểm tra phản hồi và hiển thị thông báo từ backend
+          if (response.data && response.data.message) {
+            toast.success(response.data.message); // Hiển thị thông báo thành công
+          } else {
+            toast.success("Danh mục đã được xóa!"); // Thông báo mặc định nếu không có thông báo từ backend
+          }
+
           // Cập nhật lại danh sách sau khi xóa
           fetchCategories();
         } catch (error) {
           console.error("Lỗi khi xóa danh mục:", error);
-          toast.error("Xóa danh mục thất bại!");
+
+          // Kiểm tra xem backend có trả về thông báo lỗi hay không
+          if (
+            error.response &&
+            error.response.data &&
+            error.response.data.message
+          ) {
+            toast.error(error.response.data.message); // Hiển thị thông báo lỗi từ backend
+          } else {
+            toast.error("Xóa danh mục thất bại!"); // Thông báo lỗi mặc định
+          }
         }
       }
     };

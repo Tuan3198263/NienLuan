@@ -1,14 +1,14 @@
 const Category = require("../models/category");
+const slugify = require("slugify");
+const Brand = require("../models/brand")
+const Product = require("../models/product")
 
 exports.createCategory = async (req, res) => {
-  const { name, parentCategory, description, status } = req.body;
+  const { name, description, status } = req.body;
 
   try {
-   
-
     const newCategory = new Category({
       name,
-      parentCategory,
       description,
       status,
     });
@@ -27,15 +27,14 @@ exports.createCategory = async (req, res) => {
   }
 };
 
-
 exports.updateCategory = async (req, res) => {
   const { id } = req.params;
-  const { name, parentCategory, description, status } = req.body; // Thay đổi từ parentId thành parentCategory
+  const { name, description, status } = req.body;
 
   try {
     const updatedCategory = await Category.findByIdAndUpdate(
       id,
-      { name, parentCategory, description, status }, // Sử dụng parentCategory thay vì parentId
+      { name, description, status },
       { new: true, runValidators: true }
     );
 
@@ -55,11 +54,20 @@ exports.updateCategory = async (req, res) => {
   }
 };
 
-// Xóa danh mục
+
 exports.deleteCategory = async (req, res) => {
   const { id } = req.params;
 
   try {
+    // Kiểm tra xem danh mục có sản phẩm hay không
+    const categoryWithProducts = await Product.findOne({ category: id });
+    if (categoryWithProducts) {
+      return res.status(400).json({
+        message: "Không thể xóa danh mục này vì nó đang chứa sản phẩm.",
+      });
+    }
+
+    // Nếu không có sản phẩm trong danh mục, thực hiện xóa danh mục
     const deletedCategory = await Category.findByIdAndDelete(id);
 
     if (!deletedCategory) {
@@ -78,6 +86,7 @@ exports.deleteCategory = async (req, res) => {
   }
 };
 
+
 exports.getAllCategories = async (req, res) => {
   try {
     // Lấy tất cả danh mục từ cơ sở dữ liệu mà không cần phân cấp
@@ -93,16 +102,38 @@ exports.getAllCategories = async (req, res) => {
   }
 };
 
-// Lấy tên tất cả danh mục
+// Lấy tên tất cả danh mục có trạng thái "active"
 exports.getCategoryNames = async (req, res) => {
   try {
-    // Lấy tất cả danh mục chỉ với trường 'name'
-    const categories = await Category.find({}, 'name');  // Truy vấn chỉ lấy trường 'name'
-    
-    // Trả về danh sách tên các danh mục
+    // Chỉ lấy danh mục có status = "active" và chỉ lấy trường 'name' và 'slug'
+    const categories = await Category.find({ status: "active" }, "name slug");
+
     res.status(200).json(categories);
   } catch (err) {
-    res.status(500).json({ message: 'Lỗi khi lấy danh sách tên danh mục', error: err.message });
+    res.status(500).json({
+      message: "Lỗi khi lấy danh sách tên danh mục",
+      error: err.message,
+    });
+  }
+};
+
+
+exports.getCategoryBySlug = async (req, res) => {
+  const { slug } = req.params;
+
+  try {
+    const category = await Category.findOne({ slug });
+
+    if (!category) {
+      return res.status(404).json({ message: "Không tìm thấy danh mục!" });
+    }
+
+    res.status(200).json(category);
+  } catch (error) {
+    res.status(500).json({
+      message: "Lỗi khi lấy danh mục!",
+      error: error.message,
+    });
   }
 };
 

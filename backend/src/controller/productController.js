@@ -1,5 +1,7 @@
 const Product = require('../models/product');
 const cloudinary = require('../config/cloudinaryConfig');
+const mongoose = require('mongoose');  // Thêm dòng này
+const Category = require('../models/category')
 
 
 
@@ -193,3 +195,107 @@ exports.deleteProduct = async (req, res) => {
     res.status(500).json({ message: 'Lỗi server', error });
   }
 };
+
+
+
+
+// Lấy tất cả sản phẩm theo slug danh mục
+exports.getProductsByCategorySlug = async (req, res) => {
+  const { slug } = req.params; // Lấy slug từ tham số route
+
+  try {
+    // Tìm danh mục theo slug
+    const category = await Category.findOne({ slug });
+    if (!category) {
+      return res.status(404).json({ message: 'Danh mục không tồn tại' });
+    }
+
+    // Tìm các sản phẩm thuộc danh mục này
+    const products = await Product.find({ category: category._id, active: true  })
+      .populate('category', 'name') // Lấy thông tin tên danh mục từ collection Category
+      .populate('brand', 'name') // Lấy thông tin tên thương hiệu từ collection Brand
+      .sort({ createdAt: -1 }); // Sắp xếp theo thời gian tạo mới nhất
+
+    // Kiểm tra nếu không có sản phẩm
+    if (products.length === 0) {
+      return res.status(404).json({ 
+        message: 'Không có sản phẩm nào trong danh mục này. Hãy thử chọn danh mục khác.' 
+      });
+    }
+
+    // Trả về danh sách sản phẩm nếu có
+    res.status(200).json({
+      message: 'Danh sách sản phẩm theo danh mục',
+      totalProducts: products.length, // Tổng số sản phẩm
+      products, // Mảng chứa các sản phẩm
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: 'Lỗi server khi lấy danh sách sản phẩm theo danh mục', 
+      error
+    });
+  }
+};
+
+// Lấy thông tin chi tiết của một sản phẩm theo slug
+exports.getProductBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params; // Lấy slug từ URL params
+
+    // Tìm sản phẩm theo slug và populate các trường liên quan
+    const product = await Product.findOne({ slug , active: true })
+      .populate('category', 'name') // Lấy thông tin tên danh mục
+      .populate('brand', 'name'); // Lấy thông tin tên thương hiệu
+
+    // Nếu không tìm thấy sản phẩm
+    if (!product) {
+      return res.status(404).json({ message: 'Không tìm thấy sản phẩm với slug này.' });
+    }
+
+    // Trả về thông tin chi tiết sản phẩm
+    res.status(200).json({
+      message: 'Thông tin sản phẩm',
+      product,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Lỗi server', error });
+  }
+};
+
+// Lấy danh sách sản phẩm theo từ khóa tìm kiếm
+exports.searchProducts = async (req, res) => {
+  try {
+    const { keyword } = req.query; // Lấy từ khóa từ query string
+
+    // Kiểm tra nếu không có từ khóa
+    if (!keyword || keyword.trim() === '') {
+      return res.status(400).json({ message: 'Vui lòng nhập từ khóa tìm kiếm!' });
+    }
+
+    // Tìm sản phẩm có chứa từ khóa trong các trường name hoặc description (hoặc các trường khác nếu cần)
+    const products = await Product.find({
+      $or: [
+        { name: { $regex: keyword, $options: 'i' } }, // Tìm theo tên sản phẩm (không phân biệt hoa thường)
+      ],
+    })
+      .populate('category', 'name') // Lấy thông tin tên danh mục
+      .populate('brand', 'name') // Lấy thông tin tên thương hiệu
+      .sort({ createdAt: -1 }); // Sắp xếp theo thời gian tạo mới nhất
+
+    // Trả về danh sách sản phẩm (nếu không tìm thấy, vẫn trả về mảng rỗng)
+    res.status(200).json({
+      message: 'Danh sách sản phẩm theo từ khóa tìm kiếm',
+      totalProducts: products.length,
+      products,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Lỗi server', error });
+  }
+};
+
+
+
+

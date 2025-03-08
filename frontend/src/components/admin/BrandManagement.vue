@@ -1,5 +1,5 @@
 <template>
-  <div class="brand-management mb-4 mt-4">
+  <div class="brand-management mb-4">
     <!-- Tiêu đề quản lý thương hiệu (in đậm) -->
     <h4 class="fw-bold">Quản lý Thương hiệu</h4>
 
@@ -178,9 +178,10 @@
       </thead>
       <tbody>
         <tr v-for="(brand, index) in paginatedBrands" :key="brand._id">
-          <td>{{ index + 1 }}</td>
+          <td>{{ (currentPage - 1) * pageSize + index + 1 }}</td>
+          <!-- Sửa STT -->
           <td>{{ brand.name }}</td>
-          <td>
+          <td style="text-align: center">
             <img :src="brand.logo" alt="Logo" class="brand-logo" />
           </td>
           <td>{{ brand.description }}</td>
@@ -217,7 +218,7 @@
       <ul class="pagination">
         <!-- Nút "Trước" -->
         <li class="page-item" :class="{ disabled: currentPage === 1 }">
-          <button class="page-link" @click="prevPage">Trước</button>
+          <button class="page-link" @click="previousPage">Trước</button>
         </li>
 
         <!-- Nút số trang -->
@@ -388,10 +389,18 @@ export default {
         // Làm mới lại danh sách thương hiệu
         fetchBrands();
       } catch (error) {
-        toast.error("Lỗi khi xóa thương hiệu:", error);
-
-        // Hiển thị thông báo lỗi nếu có
-        toast.error("Có lỗi xảy ra khi xóa thương hiệu.");
+        // Kiểm tra lỗi từ phản hồi của server
+        if (
+          error.response &&
+          error.response.data &&
+          error.response.data.message
+        ) {
+          // Nếu có thông báo lỗi từ server, hiển thị thông báo đó
+          toast.error(error.response.data.message);
+        } else {
+          // Nếu không có thông báo lỗi từ server, hiển thị thông báo mặc định
+          toast.error("Có lỗi xảy ra khi xóa thương hiệu.");
+        }
       }
     };
 

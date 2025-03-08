@@ -1,5 +1,7 @@
 const cloudinary = require('cloudinary').v2;
 const Brand = require('../models/brand');
+const Category = require('../models/category');
+const Product = require('../models/product')
 
 // Lấy danh sách tất cả thương hiệu
 exports.getAllBrands = async (req, res) => {
@@ -150,7 +152,7 @@ exports.updateBrand = async (req, res) => {
   }
 };
 
-
+// xóa thương hiệu
 exports.deleteBrand = async (req, res) => {
   try {
     const { brandId } = req.params;  // Lấy brandId từ params
@@ -161,12 +163,79 @@ exports.deleteBrand = async (req, res) => {
       return res.status(404).json({ message: 'Thương hiệu không tìm thấy!' });
     }
 
-    // Xóa thương hiệu khỏi MongoDB bằng findByIdAndDelete
+    // Kiểm tra xem thương hiệu có sản phẩm nào không
+    const productsWithBrand = await Product.find({ brand }); // Tìm sản phẩm có brandId này
+    if (productsWithBrand.length > 0) {
+      return res.status(400).json({ message: 'Không thể xóa thương hiệu vì đã có sản phẩm liên kết!' });
+    }
+
+    // Xóa thương hiệu khỏi MongoDB
     await Brand.findByIdAndDelete(brandId);  // Thay vì brand.remove()
     res.status(200).json({ message: 'Thương hiệu đã được xóa thành công!' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Lỗi server', error });
+  }
+};
+
+
+// API lấy danh sách thương hiệu theo danh mục
+exports.getBrandsByCategory = async (req, res) => {
+  try {
+    const categorySlug = req.params.categorySlug;
+
+    // Tìm danh mục theo slug
+    const category = await Category.findOne({ slug: categorySlug });
+
+    if (!category) {
+      return res.status(404).json({ message: 'Category not found' });
+    }
+
+    // Lấy tất cả các sản phẩm trong danh mục
+    const products = await Product.find({ category: category._id }).populate('brand');
+
+    // Lấy danh sách các thương hiệu từ các sản phẩm (loại bỏ trùng lặp)
+    const brands = [...new Set(products.map(product => product.brand._id.toString()))];
+
+    // Truy vấn các thương hiệu từ database
+    const brandDetails = await Brand.find({
+      _id: { $in: brands }
+    });
+
+    res.status(200).json(brandDetails);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.getBrandsByProductKeyword = async (req, res) => {
+  try {
+    const { keyword } = req.query; // Lấy từ khóa tìm kiếm từ query string
+
+    if (!keyword || keyword.trim() === "") {
+      return res.status(400).json({ message: "Vui lòng nhập từ khóa tìm kiếm!" });
+    }
+
+    // Tìm các sản phẩm có tên hoặc mô tả chứa từ khóa
+    const products = await Product.find({
+      $or: [
+        { name: { $regex: keyword, $options: "i" } }, // Tìm theo tên sản phẩm
+      ]
+    }).populate("brand"); // Populate để lấy thông tin brand liên kết
+
+    // Lấy danh sách các thương hiệu (loại bỏ trùng lặp)
+    const brandIds = [...new Set(products.map(product => product.brand._id.toString()))];
+
+    // Truy vấn thông tin chi tiết của các thương hiệu
+    const brands = await Brand.find({
+      _id: { $in: brandIds }
+    });
+
+    res.status(200).json(brands); // Trả về danh sách thương hiệu
+  } catch (error) {
+    console.error("Lỗi khi tìm kiếm thương hiệu:", error);
+    res.status(500).json({ message: "Lỗi server", error });
   }
 };
 

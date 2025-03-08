@@ -13,6 +13,9 @@
           placeholder="Nhập họ và tên"
           required
         />
+        <small v-if="errors.fullName" class="text-danger">{{
+          errors.fullName
+        }}</small>
       </div>
 
       <!-- Email -->
@@ -120,10 +123,18 @@ export default {
       errors.value = {}; // Xóa lỗi trước đó
       let isValid = true;
 
-      // Kiểm tra số điện thoại (10-11 chữ số)
-      const phoneRegex = /^[0-9]{10,11}$/;
-      if (!phoneRegex.test(form.value.phone)) {
-        errors.value.phone = "Số điện thoại phải có 10-11 chữ số.";
+      // Kiểm tra họ và tên: không vượt quá 50 ký tự, không chứa ký tự đặc biệt hoặc số
+      const nameRegex = /^[A-Za-zÀ-Ỹà-ỹ\s]{1,50}$/;
+      if (!nameRegex.test(form.value.fullName)) {
+        errors.value.fullName =
+          "Tên không được chứa số hoặc ký tự đặc biệt, tối đa 50 ký tự.";
+        isValid = false;
+      }
+
+      // Kiểm tra số điện thoại Việt Nam (bắt đầu bằng 02-09, có đúng 10 chữ số)
+      const phoneRegex = /^(0[2-9]\d{8})$/;
+      if (!phoneRegex.test(form.value.phone.trim())) {
+        errors.value.phone = "Số điện thoại không hợp lệ.";
         isValid = false;
       }
 
@@ -150,7 +161,7 @@ export default {
           "http://localhost:3000/api/auth/register",
           form.value
         );
-        toast.success("Đăng ký thành công!");
+        toast.success("Đăng ký thành công");
         router.push("/login");
       } catch (error) {
         toast.error(error.response?.data?.message || "Lỗi đăng ký");

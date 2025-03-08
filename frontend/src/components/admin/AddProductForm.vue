@@ -1,7 +1,7 @@
 <template>
-  <div class="container mt-5">
+  <div class="container">
     <!-- Tiêu đề -->
-    <div class="d-flex justify-content-between align-items-center mb-4 mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
       <h4 class="text-start fw-bold">Thêm sản phẩm mới</h4>
       <button class="btn btn-secondary" @click="goToProductList">
         <i class="fas fa-list"></i> Danh sách sản phẩm
@@ -71,7 +71,7 @@
       <!-- Hình ảnh -->
       <div class="mb-3">
         <label for="images" class="form-label">
-          <i class="fas fa-images"></i> Hình ảnh
+          <i class="fas fa-images"></i> Hình ảnh (tối đa 5)
         </label>
         <input
           type="file"
@@ -352,5 +352,11 @@ export default {
 </script>
 
 <style scoped>
-/* Thêm style nếu cần */
+/* Thêm scoped nếu dùng Single File Component */
+
+/* Đối với Vue 3 cần dùng deep selector */
+::v-deep(.vs__dropdown-menu) {
+  max-height: 200px;
+  overflow-y: auto !important;
+}
 </style>
