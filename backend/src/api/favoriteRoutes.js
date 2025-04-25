@@ -12,6 +12,7 @@ router.get('/list', authMiddleware, favoriteController.getFavorites);
 // Kiểm tra trạng thái yêu thích của một sản phẩm
 router.get('/check/:productId', authMiddleware, favoriteController.checkFavoriteStatus);
 
+//dem so luong san pham yeu thich
 router.get("/count/:productId", favoriteController.getFavoriteCountById);
 
 

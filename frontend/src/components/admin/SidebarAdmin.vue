@@ -3,8 +3,67 @@
     <!-- Header -->
     <div class="header">
       <div class="header-icons">
-        <i class="fas fa-bell"></i>
-        <i class="fas fa-envelope"></i>
+        <div
+          title="Thông báo"
+          class="notification-container"
+          @click.stop="toggleNotifications"
+        >
+          <i class="fas fa-bell"></i>
+          <span v-if="unreadCount" class="notification-badge">{{
+            unreadCount
+          }}</span>
+          <!-- Notification Dropdown -->
+          <div
+            v-if="isNotificationsOpen"
+            class="notification-dropdown"
+            ref="notificationDropdown"
+          >
+            <div class="notification-header">
+              <h3>Thông báo</h3>
+              <button class="mark-all-read" @click="markAllAsRead">
+                Đánh dấu đã đọc
+              </button>
+            </div>
+            <div class="notification-list">
+              <div v-if="notifications.length === 0" class="no-notifications">
+                Không có thông báo nào
+              </div>
+              <div
+                v-for="(notification, index) in notifications"
+                :key="notification._id"
+                class="notification-item"
+                :class="{ unread: !notification.read }"
+              >
+                <div class="notification-icon">
+                  <i :class="notification.icon"></i>
+                </div>
+                <div class="notification-content" @click="markAsRead(index)">
+                  <div class="notification-message">
+                    {{ notification.message }}
+                  </div>
+                  <div class="notification-time">
+                    {{ formatTime(notification.time) }}
+                  </div>
+                </div>
+                <div class="notification-actions">
+                  <button
+                    class="delete-btn"
+                    @click.stop="deleteNotification(notification._id)"
+                  >
+                    <i class="fas fa-times"></i>
+                    <!-- Icon dấu "x" thay vì thùng rác -->
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="notification-footer">
+              <router-link to="/admin/notifications">Xem tất cả</router-link>
+            </div>
+          </div>
+        </div>
+        <div class="message-container">
+          <i class="fas fa-envelope"></i>
+        </div>
       </div>
       <!-- Cập nhật Avatar với viền tròn -->
       <div class="avatar">
@@ -64,16 +123,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from "vue";
+import { ref, onMounted, onBeforeUnmount, computed } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
 import { useAuthStore } from "../../store/AuthStore"; // Import store Pinia
+import { io } from "socket.io-client"; // Import socket.io-client
 
 const avatarUrl = ref(""); // Biến lưu URL ảnh avatar
 // Khởi tạo store
 const authStore = useAuthStore();
 // Khai báo sự kiện emit
 const emit = defineEmits();
+
+// Biến lưu kết nối socket
+const socket = ref(null);
 
 // Khai báo các biến reactive
 const isSidebarOpen = ref(false);
@@ -162,6 +225,12 @@ const menuList = ref([
   },
   {
     id: 7,
+    name: "Chat",
+    link: "/admin/chatbot",
+    icon: "fas fa-comments", // Biểu tượng phù hợp cho chat
+  },
+  {
+    id: 8,
     name: "Home",
     link: "/",
     icon: "fas fa-home",
@@ -215,22 +284,220 @@ const toggleSubmenu = (menuId) => {
 const checkScreenSize = () => {
   if (window.innerWidth < 768) {
     isSidebarOpen.value = false; // Đóng sidebar nếu màn hình nhỏ hơn 768px
+    localStorage.setItem("isSidebarOpen", "false"); // Lưu trạng thái vào localStorage
     emit("toggleSidebar", isSidebarOpen.value); // Phát sự kiện khi sidebar bị đóng
   }
 };
+
+// Notification related states
+const isNotificationsOpen = ref(false);
+const notificationDropdown = ref(null);
+
+// Initialize notifications as empty array
+const notifications = ref([]);
+
+// Function to fetch notifications from API
+const fetchNotifications = async () => {
+  try {
+    const token = authStore.token;
+    const response = await axios.get("http://localhost:3000/api/notifications");
+
+    if (response.data.success) {
+      notifications.value = response.data.data;
+    }
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+  }
+};
+
+// Format time to display in a user-friendly way
+const formatTime = (timeString) => {
+  const date = new Date(timeString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / (60 * 1000));
+  const diffHours = Math.floor(diffMs / (60 * 60 * 1000));
+  const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+
+  if (diffMins < 60) {
+    return `${diffMins} phút trước`;
+  } else if (diffHours < 24) {
+    return `${diffHours} giờ trước`;
+  } else {
+    return `${diffDays} ngày trước`;
+  }
+};
+
+// Calculate unread notifications count
+const unreadCount = computed(() => {
+  return notifications.value.filter((notification) => !notification.read)
+    .length;
+});
+
+// Toggle notifications dropdown
+const toggleNotifications = () => {
+  isNotificationsOpen.value = !isNotificationsOpen.value;
+
+  // Fetch notifications when opening the dropdown
+  if (isNotificationsOpen.value) {
+    fetchNotifications();
+  }
+};
+
+// Mark a notification as read
+const markAsRead = async (index) => {
+  try {
+    const notification = notifications.value[index];
+    // Update read status on server
+    await axios.put(
+      `http://localhost:3000/api/notifications/${notification._id}/read`
+    );
+
+    // Update local state
+    notification.read = true;
+  } catch (error) {
+    console.error("Error marking notification as read:", error);
+  }
+};
+
+// Mark all notifications as read
+const markAllAsRead = async () => {
+  try {
+    // Update all notifications on server
+    await axios.put("http://localhost:3000/api/notifications/read-all");
+
+    // Update local state
+    notifications.value.forEach((notification) => {
+      notification.read = true;
+    });
+  } catch (error) {
+    console.error("Error marking all notifications as read:", error);
+  }
+};
+
+// Delete a notification
+const deleteNotification = async (notificationId) => {
+  try {
+    // Call API to delete notification
+    const response = await axios.delete(
+      `http://localhost:3000/api/notifications/${notificationId}`
+    );
+
+    if (response.data.success) {
+      // Remove from local state
+      const index = notifications.value.findIndex(
+        (n) => n._id === notificationId
+      );
+      if (index !== -1) {
+        notifications.value.splice(index, 1);
+      }
+
+      // Optional: Show success toast
+      console.log("Notification deleted successfully");
+    }
+  } catch (error) {
+    console.error("Error deleting notification:", error);
+  }
+};
+
+// Close notifications dropdown when clicking outside
+const handleClickOutside = (event) => {
+  if (
+    isNotificationsOpen.value &&
+    notificationDropdown.value &&
+    !notificationDropdown.value.contains(event.target) &&
+    !event.target.classList.contains("fa-bell")
+  ) {
+    isNotificationsOpen.value = false;
+  }
+};
+
+// Hàm khởi tạo kết nối Socket.IO
+const initSocketConnection = () => {
+  // Khởi tạo kết nối đến máy chủ Socket.IO
+  socket.value = io("http://localhost:3000");
+
+  // Lắng nghe sự kiện kết nối
+  socket.value.on("connect", () => {
+    console.log("🔌 Socket.IO đã kết nối thành công!");
+  });
+
+  // Lắng nghe sự kiện ngắt kết nối
+  socket.value.on("disconnect", () => {
+    console.log("🔌 Socket.IO đã ngắt kết nối!");
+  });
+
+  // Lắng nghe sự kiện thông báo
+  socket.value.on("notification", (data) => {
+    console.log("📢 Nhận thông báo mới:", data);
+
+    if (data.action === "new") {
+      // Thêm thông báo mới vào đầu danh sách
+      notifications.value.unshift(data.notification);
+
+      // Hiển thị toast thông báo
+      showNotificationToast(data.notification);
+    } else if (data.action === "update") {
+      // Cập nhật thông báo
+      const index = notifications.value.findIndex(
+        (n) => n._id === data.notification._id
+      );
+      if (index !== -1) {
+        notifications.value[index] = data.notification;
+      }
+    } else if (data.action === "delete") {
+      // Xóa thông báo
+      const index = notifications.value.findIndex(
+        (n) => n._id === data.notificationId
+      );
+      if (index !== -1) {
+        notifications.value.splice(index, 1);
+      }
+    }
+  });
+};
+
+// Function to display notification toast
+const showNotificationToast = (notification) => {
+  // Add implementation for showing toast notification
+  // This is a placeholder for the toast functionality
+  console.log("Toast notification:", notification.message);
+};
+
 // Lấy trạng thái sidebar từ localStorage khi trang được tải lại
 onMounted(() => {
-  const storedSidebarState = localStorage.getItem("isSidebarOpen");
-  if (storedSidebarState !== null) {
-    isSidebarOpen.value = JSON.parse(storedSidebarState);
+  // Kiểm tra kích thước màn hình trước
+  if (window.innerWidth < 768) {
+    isSidebarOpen.value = false; // Luôn đóng sidebar nếu màn hình nhỏ
+    localStorage.setItem("isSidebarOpen", "false");
+  } else {
+    // Chỉ lấy giá trị từ localStorage nếu màn hình đủ lớn
+    const storedSidebarState = localStorage.getItem("isSidebarOpen");
+    if (storedSidebarState !== null) {
+      isSidebarOpen.value = JSON.parse(storedSidebarState);
+    }
   }
+
   window.addEventListener("resize", checkScreenSize); // Lắng nghe sự kiện resize
+  window.addEventListener("click", handleClickOutside); // Add click outside event
+
   fetchAvatar();
+  fetchNotifications(); // Add this line to fetch notifications when component mounts
+
+  // Khởi tạo kết nối Socket.IO
+  initSocketConnection();
 });
 
 // Dọn dẹp sự kiện resize khi component bị hủy
 onBeforeUnmount(() => {
   window.removeEventListener("resize", checkScreenSize);
+  window.removeEventListener("click", handleClickOutside);
+
+  // Ngắt kết nối Socket.IO khi component bị hủy
+  if (socket.value) {
+    socket.value.disconnect();
+    console.log("🔌 Đã ngắt kết nối Socket.IO");
+  }
 });
 </script>
 
@@ -276,6 +543,15 @@ onBeforeUnmount(() => {
   display: flex;
   gap: 20px;
   order: 1; /* Đảm bảo các icon hiển thị trước avatar */
+  align-items: center;
+}
+
+.notification-container,
+.message-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 24px; /* Consistent height for both containers */
 }
 
 .avatar {
@@ -433,5 +709,174 @@ onBeforeUnmount(() => {
 /* Thêm hiệu ứng hover cho toàn bộ item */
 .submenu-list li:hover {
   cursor: pointer;
+}
+
+/* Notification Styles */
+.notification-container {
+  position: relative;
+  display: inline-block;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background-color: #e74c3c;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.notification-dropdown {
+  position: absolute;
+  top: 40px;
+  right: -100px;
+  width: 320px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+  z-index: 1200;
+  max-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.notification-header {
+  padding: 12px 15px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notification-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #333;
+}
+
+.mark-all-read {
+  background: none;
+  border: none;
+  color: #3498db;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.mark-all-read:hover {
+  text-decoration: underline;
+}
+
+.notification-list {
+  overflow-y: auto;
+  max-height: 300px;
+}
+
+.notification-item {
+  padding: 12px 15px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.notification-item:hover {
+  background-color: #f9f9f9;
+}
+
+.notification-item.unread {
+  background-color: #f0f8ff;
+}
+
+.notification-icon {
+  margin-right: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #e1f5fe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3498db;
+}
+
+.notification-content {
+  flex: 1;
+  cursor: pointer;
+}
+
+.notification-message {
+  font-size: 0.9rem;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.notification-time {
+  font-size: 0.75rem;
+  color: #999;
+}
+
+.notification-actions {
+  margin-left: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.delete-btn:hover {
+  color: #e74c3c;
+  background-color: rgba(231, 76, 60, 0.1);
+}
+
+.notification-footer {
+  padding: 10px;
+  text-align: center;
+  border-top: 1px solid #eee;
+}
+
+.notification-footer a {
+  color: #3498db;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.notification-footer a:hover {
+  text-decoration: underline;
+}
+
+.no-notifications {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+  font-style: italic;
+}
+
+/* Make sure icons in header are clickable */
+.header-icons i {
+  cursor: pointer;
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-icons i:hover {
+  color: #3498db;
 }
 </style>

@@ -25,6 +25,11 @@ import OrderInfo from '../components/user/OrderInfo.vue';
 import OrderDetailsPage from '../views/user/OrderDetailsPage.vue';
 import SignupAdminPage from '../views/admin/SignupAdminPage.vue';
 import OrderManager from '../components/admin/OrderManager.vue';
+import BrandPage from '../views/user/BrandPage.vue';
+import BrandDetailPage from '../views/user/BrandDetailPage.vue';
+import UserReviewed from '../components/user/UserReviewed.vue';
+import UserPendingReviews from '../components/user/UserPendingReviews.vue';
+import ChatbotManager from '../components/admin/ChatbotManager.vue';
 
 // Các route
 const routes = [
@@ -47,6 +52,17 @@ const routes = [
     component: ProductDetailPage,
     props: true,
   },
+  {
+    path: '/brands',
+    name: 'BrandPage',
+    component: BrandPage,
+  },
+   {
+  path: '/brands/:id',  // Sử dụng _id làm tham số trong URL
+  name: 'BrandDetailPage',
+  component: BrandDetailPage,
+  props: true, // Đảm bảo id được truyền dưới dạng props vào component
+},
   {
     path: '/cart',
     name: 'CartPage',
@@ -71,7 +87,10 @@ const routes = [
       { path: "", component: ProfileInfo },
       { path: "address", name: "Address", component: AddressForm },
       { path: "orders", name: "Orders", component: OrderInfo },
-       { path: "wishlist", name: "Wishlist", component: Wishlist }, // Trang Wishlist
+       { path: "wishlist", name: "Wishlist", component: Wishlist }, 
+       // Trang Wishlist
+        { path: "reviewed", name: "Reviewed", component: UserReviewed },
+      { path: "pending-reviews", name: "Pending-Reviews", component: UserPendingReviews },
     ],
   },
   {
@@ -88,8 +107,14 @@ const routes = [
       { path: "products/list", name: "ProductManager", component: ProductManager },
       { path: 'user/information', name: 'UserManagement', component: UserManager },
        { path: 'orders/list', name: 'OrderManager', component: OrderManager },
+       {
+    path: '/admin/chatbot',
+    name: 'AdminChatbot',
+    component: ChatbotManager,
+  },
     ],
   },
+  
   { path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFound },
 ];
 

@@ -236,5 +236,120 @@ exports.unhideReview = async (req, res) => {
   }
 };
 
+// Lấy danh sách sản phẩm đã đánh giá của người dùng
+exports.getUserReviewedProducts = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    // Lấy tất cả đánh giá của user và populate thông tin sản phẩm
+    const reviews = await Review.find({ userId, status: 'active' })
+      .populate('productId', 'name price images brand slug')
+      .sort({ createdAt: -1 }); // Sắp xếp theo thời gian mới nhất
+
+    // Lấy số lần mua của từng sản phẩm
+    const productIds = reviews.map(review => review.productId._id);
+    const orders = await Order.find({
+      userId,
+      'items.productId': { $in: productIds },
+      status: 'delivered'
+    });
+
+    // Tạo map đếm số lượng mua của từng sản phẩm
+    const purchaseCountMap = new Map();
+    orders.forEach(order => {
+      order.items.forEach(item => {
+        const productId = item.productId.toString();
+        purchaseCountMap.set(
+          productId,
+          (purchaseCountMap.get(productId) || 0) + item.quantity
+        );
+      });
+    });
+
+    const reviewedProducts = reviews.map(review => ({
+      product: review.productId,
+      review: {
+        rating: review.rating,
+        comment: review.comment,
+        createdAt: review.createdAt
+      },
+      totalPurchased: purchaseCountMap.get(review.productId._id.toString()) || 0
+    }));
+
+    res.status(200).json({
+      success: true,
+      reviewedProducts
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi server", error: error.message });
+  }
+};
+
+// Lấy danh sách sản phẩm có thể đánh giá của người dùng
+exports.getPendingReviewProducts = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    // Lấy tất cả đơn hàng đã giao của user
+    const orders = await Order.find({
+      userId,
+      status: 'delivered'
+    }).populate('items.productId', 'name price images brand slug');
+
+    // Lấy tất cả đánh giá hiện có của user
+    const reviews = await Review.find({ userId });
+
+    // Tạo map đếm số lượng mua và đánh giá của từng sản phẩm
+    const purchaseCountMap = new Map();
+    const reviewCountMap = new Map();
+
+    orders.forEach(order => {
+      order.items.forEach(item => {
+        const productId = item.productId._id.toString();
+        purchaseCountMap.set(
+          productId,
+          (purchaseCountMap.get(productId) || 0) + item.quantity
+        );
+      });
+    });
+
+    reviews.forEach(review => {
+      const productId = review.productId.toString();
+      reviewCountMap.set(
+        productId,
+        (reviewCountMap.get(productId) || 0) + 1
+      );
+    });
+
+    // Lọc và tổng hợp các sản phẩm có thể đánh giá
+    const pendingProducts = [];
+    orders.forEach(order => {
+      order.items.forEach(item => {
+        const productId = item.productId._id.toString();
+        const purchased = purchaseCountMap.get(productId) || 0;
+        const reviewed = reviewCountMap.get(productId) || 0;
+        
+        if (purchased > reviewed) {
+          pendingProducts.push({
+            product: item.productId,
+            remainingReviews: purchased - reviewed,
+            totalPurchased: purchased,
+            lastPurchaseDate: order.createdAt
+          });
+        }
+      });
+    });
+
+    res.status(200).json({
+      success: true,
+      pendingProducts
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi server", error: error.message });
+  }
+};
+
 
 

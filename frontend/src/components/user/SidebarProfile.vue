@@ -33,46 +33,66 @@
       <li class="list-group-item list-group-item-action">
         <router-link
           to="/profile"
-          class="d-block w-100 text-dark text-decoration-none"
-          active-class="active-link"
+          class="d-block w-100 text-dark text-decoration-none menu-item"
         >
-          <i class="fas fa-user me-2"></i> Thông tin cá nhân
+          <i class="fas fa-user"></i>
+          <span>Thông tin cá nhân</span>
         </router-link>
       </li>
       <li class="list-group-item list-group-item-action">
         <router-link
           to="/profile/address"
-          class="d-block w-100 text-dark text-decoration-none"
-          active-class="active-link"
+          class="d-block w-100 text-dark text-decoration-none menu-item"
         >
-          <i class="fas fa-home me-2"></i> Địa chỉ
+          <i class="fas fa-home"></i>
+          <span>Địa chỉ</span>
         </router-link>
       </li>
       <li class="list-group-item list-group-item-action">
         <router-link
           to="/profile/orders"
-          class="d-block w-100 text-dark text-decoration-none"
-          active-class="active-link"
+          class="d-block w-100 text-dark text-decoration-none menu-item"
         >
-          <i class="fas fa-box me-2"></i> Đơn hàng
+          <i class="fas fa-box"></i>
+          <span>Đơn hàng</span>
         </router-link>
       </li>
       <li class="list-group-item list-group-item-action">
         <router-link
           to="/profile/wishlist"
-          class="d-block w-100 text-dark text-decoration-none"
-          active-class="active-link"
+          class="d-block w-100 text-dark text-decoration-none menu-item"
         >
-          <i class="fas fa-heart me-2"></i> Yêu thích
+          <i class="fas fa-heart"></i>
+          <span>Yêu Thích</span>
+        </router-link>
+      </li>
+      <!-- Thêm mục Đã đánh giá -->
+      <li class="list-group-item list-group-item-action">
+        <router-link
+          to="/profile/reviewed"
+          class="d-block w-100 text-dark text-decoration-none menu-item"
+        >
+          <i class="fas fa-star"></i>
+          <span>Đã đánh giá</span>
+        </router-link>
+      </li>
+      <!-- Thêm mục Chờ đánh giá -->
+      <li class="list-group-item list-group-item-action">
+        <router-link
+          to="/profile/pending-reviews"
+          class="d-block w-100 text-dark text-decoration-none menu-item"
+        >
+          <i class="fas fa-clipboard-list"></i>
+          <span>Chờ đánh giá</span>
         </router-link>
       </li>
       <li class="list-group-item list-group-item-action">
         <router-link
           to="/cart"
-          class="d-block w-100 text-dark text-decoration-none"
-          active-class="active-link"
+          class="d-block w-100 text-dark text-decoration-none menu-item"
         >
-          <i class="fas fa-shopping-cart me-2"></i> Giỏ hàng
+          <i class="fas fa-shopping-cart"></i>
+          <span>Giỏ hàng</span>
         </router-link>
       </li>
     </ul>
@@ -161,7 +181,25 @@ const triggerAvatarChange = () => {
   z-index: 10;
 }
 
+.menu-item {
+  display: flex !important;
+  align-items: center;
+  gap: 12px; /* Khoảng cách giữa icon và chữ */
+}
+
+.menu-item i {
+  width: 20px; /* Chiều rộng cố định cho icon */
+  text-align: center; /* Căn giữa icon */
+  font-size: 16px; /* Kích thước đồng nhất cho icon */
+}
+
+.menu-item span {
+  font-size: 14px; /* Kích thước chữ đồng nhất */
+  line-height: 1.5; /* Chiều cao dòng phù hợp */
+}
+
 .list-group-item {
+  padding: 12px 16px; /* Padding đồng nhất cho các item */
   cursor: pointer;
 }
 

@@ -1,13 +1,16 @@
 const axios = require('axios');
 const Order = require('../models/order'); 
 const Cart = require('../models/cart'); 
+const Product = require('../models/product');  // Import model sản phẩm
 // Import module emailController
 const { sendOrderDeliveredEmail } = require('../controller/emailController');
+const eventEmitter = require("../events/event.js"); // Import eventEmitter
+
 
 //tạo đơn (có kết nối với GHN)
 exports.createOrder = async (req, res) => {
   try {
-    const { shippingInfo, insurance_value, shipping_fee_input, items } = req.body;
+    const { shippingInfo, insurance_value, shipping_fee_input } = req.body;
     const userId = req.user.userId;
 
     // Lấy giỏ hàng của người dùng
@@ -15,6 +18,22 @@ exports.createOrder = async (req, res) => {
     if (!cart || cart.items.length === 0) {
       return res.status(400).json({ message: 'Giỏ hàng của bạn trống.' });
     }
+
+     // Kiểm tra số lượng trong kho trước khi tạo đơn hàng
+    for (let item of cart.items) {
+      const product = await Product.findById(item.productId);  // Lấy sản phẩm từ DB
+
+      if (!product) {
+        return res.status(404).json({ message: `Sản phẩm với ID ${item.productId} không tồn tại.` });
+      }
+
+      if (product.stock < item.quantity) {
+        return res.status(400).json({
+          message: `Sản phẩm ${product.name} chỉ còn ${product.stock} trong kho, không đủ số lượng bạn yêu cầu.`,
+        });
+      }
+    }
+
 
     // Chuẩn bị dữ liệu gửi đến GHN
     const ghnBody = {
@@ -75,6 +94,10 @@ exports.createOrder = async (req, res) => {
 
     await order.save();
 
+      // Phát sự kiện khi tạo đơn hàng
+    eventEmitter.emit("orderCreated", order);
+
+
     return res.status(201).json({
       message: 'Đơn hàng đã được tạo thành công.',
       order,
@@ -99,7 +122,11 @@ exports.getOrdersByStatus = async (req, res) => {
     }
 
     const orders = await Order.find(query)
-      .sort({ orderDate: -1 }) // Sắp xếp theo ngày mới nhất (giảm dần)
+        .populate({
+          path: 'items.productId',
+          select: 'name price images' // Lấy thêm thông tin sản phẩm
+        })
+        .sort({ orderDate: -1 }); // Sắp xếp theo ngày mới nhất (giảm dần)
 
     return res.status(200).json({
       message: 'Lấy danh sách đơn hàng thành công.',
@@ -206,8 +233,28 @@ exports.updateOrderStatusFromWebhook = async (req, res) => {
 
         console.log(`✅ Đơn hàng ${OrderCode} đã được cập nhật trạng thái: [GHN '${Status}' => Hệ thống: '${mappedStatus}']`);
 
-        // Gửi email khi trạng thái là "delivered" nhưng không ảnh hưởng tới cập nhật trạng thái
+        // Giảm số lượng sản phẩm trong kho khi đơn hàng được giao thành công
         if (mappedStatus === 'delivered') {
+            try {
+                // Cập nhật số lượng tồn kho
+                for (const item of order.items) {
+                    const product = await Product.findById(item.productId);
+                    if (product) {
+                        product.stock -= item.quantity;
+                        await product.save();
+                        console.log(`📦 Đã giảm ${item.quantity} sản phẩm ${product.name} trong kho, còn lại: ${product.stock}`);
+                    }
+                }
+                console.log(`✅ Đã cập nhật số lượng tồn kho cho đơn hàng ${OrderCode}`);
+            } catch (stockError) {
+                console.error(`❌ Lỗi khi cập nhật số lượng tồn kho cho đơn hàng ${OrderCode}:`, stockError.message);
+            }
+
+
+              // Phát sự kiện "orderDelivered" khi đơn hàng giao thành công
+            eventEmitter.emit('orderDelivered', order); // Phát sự kiện với đối tượng đơn hàng
+            
+            // Gửi email thông báo
             try {
                 const userEmail = order.userId?.email;
                 if (userEmail) {
@@ -233,7 +280,7 @@ exports.updateOrderStatusFromWebhook = async (req, res) => {
 };
 
 
-// lấy danh sách đơn hàng
+// lấy danh sách đơn hàng (admin)
 exports.getAllOrders = async (req, res) => {
   try {
     const { sortBy = 'orderDate', sortOrder = 'desc' } = req.query;
@@ -267,6 +314,105 @@ exports.getAllOrders = async (req, res) => {
       error: error.message
     });
   }
+};
+
+
+// Hủy đơn hàng (chỉ khi trạng thái là 'pending')
+exports.cancelOrder = async (req, res) => {
+    try {
+        const { orderCode } = req.params;
+        const userId = req.user.userId;
+
+        // Tìm đơn hàng
+        const order = await Order.findOne({ orderCode, userId });
+        if (!order) {
+            return res.status(404).json({ message: "Không tìm thấy đơn hàng." });
+        }
+
+        // Chỉ cho phép hủy nếu trạng thái là 'pending'
+        if (order.status !== 'pending') {
+            return res.status(400).json({ message: "Chỉ có thể hủy đơn hàng khi đang ở trạng thái 'pending'." });
+        }
+
+        // Gửi request hủy đơn đến GHN
+        const ghnResponse = await axios.post(
+            'https://dev-online-gateway.ghn.vn/shiip/public-api/v2/switch-status/cancel',
+            { order_codes: [orderCode] },
+            {
+                headers: {
+                    'token': '8be47059-f262-11ef-a653-3600c660ea00',
+                    'Content-Type': 'application/json',
+                    'ShopId': '196030',
+                },
+            }
+        );
+
+        const cancelResult = ghnResponse?.data?.data?.[0];
+        if (!cancelResult || !cancelResult.result) {
+            return res.status(400).json({ message: `Không thể hủy đơn hàng: ${cancelResult?.message || 'Lỗi không xác định'}` });
+        }
+
+        // Cập nhật trạng thái đơn hàng trong hệ thống
+        order.status = 'canceled';
+        await order.save();
+
+         // Phát sự kiện khi hủy đơn hàng
+        eventEmitter.emit("orderCanceled", order);
+
+
+        return res.status(200).json({
+            message: "Đơn hàng đã được hủy thành công.",
+            order
+        });
+    } catch (error) {
+        console.error("❌ Lỗi khi hủy đơn hàng:", error);
+        return res.status(500).json({ message: "Lỗi khi hủy đơn hàng.", error: error.message });
+    }
+};
+
+// Hủy đơn hàng từ phía admin (không cần xác thực userId)
+exports.cancelOrderByAdmin = async (req, res) => {
+    try {
+        const { orderCode } = req.params;
+
+        // Tìm đơn hàng không cần kiểm tra userId
+        const order = await Order.findOne({ orderCode });
+        if (!order) {
+            return res.status(404).json({ message: "Không tìm thấy đơn hàng." });
+        }
+
+        // Gửi request hủy đơn đến GHN
+        const ghnResponse = await axios.post(
+            'https://dev-online-gateway.ghn.vn/shiip/public-api/v2/switch-status/cancel',
+            { order_codes: [orderCode] },
+            {
+                headers: {
+                    'token': '8be47059-f262-11ef-a653-3600c660ea00',
+                    'Content-Type': 'application/json',
+                    'ShopId': '196030',
+                },
+            }
+        );
+
+        const cancelResult = ghnResponse?.data?.data?.[0];
+        if (!cancelResult || !cancelResult.result) {
+            return res.status(400).json({ message: `Không thể hủy đơn hàng: ${cancelResult?.message || 'Lỗi không xác định'}` });
+        }
+
+        // Cập nhật trạng thái đơn hàng trong hệ thống
+        order.status = 'canceled';
+        await order.save();
+
+        // Admin không cần phát emit sự kiện
+
+        return res.status(200).json({
+            message: "Admin đã hủy đơn hàng thành công.",
+            order
+        });
+    } catch (error) {
+        console.error("❌ Lỗi khi admin hủy đơn hàng:", error);
+        return res.status(500).json({ message: "Lỗi khi admin hủy đơn hàng.", error: error.message });
+    }
 };
 
 

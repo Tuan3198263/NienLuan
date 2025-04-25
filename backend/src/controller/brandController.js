@@ -240,5 +240,25 @@ exports.getBrandsByProductKeyword = async (req, res) => {
 };
 
 
+// Lấy chi tiết của một thương hiệu theo _id
+exports.getBrandById = async (req, res) => {
+  try {
+    const { brandId } = req.params;  // Lấy brandId từ params
+
+    // Tìm thương hiệu theo _id
+    const brand = await Brand.findById(brandId);
+    
+    if (!brand) {
+      return res.status(404).json({ message: 'Thương hiệu không tìm thấy!' });
+    }
+
+    // Trả về thông tin chi tiết của thương hiệu
+    res.status(200).json(brand);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Lỗi server', error });
+  }
+};
+
 
 

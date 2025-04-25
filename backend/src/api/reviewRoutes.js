@@ -1,27 +1,32 @@
 const express = require('express');
 const reviewController = require('../controller/reviewController');
-const authMiddleware = require('../middleware/authMiddleware'); // Middleware xác thực người dùng
+const authMiddleware = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-// Route thêm đánh giá (cần đăng nhập)
+// Các route cụ thể phải đặt trước các route có parameter
+// Route thêm đánh giá mới (yêu cầu đăng nhập)
 router.post('/add', authMiddleware, reviewController.addReview);
 
-// kiểm tra quyền đánh giá
-router.get('/eligibility/:productId', authMiddleware, reviewController.checkReviewEligibility);
+// Route lấy danh sách sản phẩm đã đánh giá của người dùng
+router.get('/reviewed-products', authMiddleware, reviewController.getUserReviewedProducts);
 
-// lấy danh sách tất cả đánh giá cùng thông tin người đánh giá
-router.get('/:productId', reviewController.getReviewsByProduct);
+// Route lấy danh sách sản phẩm chờ đánh giá của người dùng
+router.get('/pending-reviews', authMiddleware, reviewController.getPendingReviewProducts);
 
-// Thêm route tính trung bình đánh giá sản phẩm
+// Route lấy số sao trung bình và thống kê đánh giá của sản phẩm
 router.get('/average/:productId', reviewController.getAverageRating);
 
-// Route ẩn đánh giá (chỉ admin mới có quyền)
+// Route kiểm tra quyền đánh giá sản phẩm của người dùng
+router.get('/eligibility/:productId', authMiddleware, reviewController.checkReviewEligibility);
+
+// Route ẩn đánh giá (chỉ người dùng sở hữu đánh giá)
 router.put('/hide/:reviewId', authMiddleware, reviewController.hideReview);
 
-// Route hiện lại đánh giá (bỏ ẩn)
+// Route hiện lại đánh giá đã ẩn (chỉ người dùng sở hữu đánh giá)
 router.put('/unhide/:reviewId', authMiddleware, reviewController.unhideReview);
 
-
+// Route lấy tất cả đánh giá của một sản phẩm (đặt cuối cùng vì có parameter)
+router.get('/:productId', reviewController.getReviewsByProduct);
 
 module.exports = router;

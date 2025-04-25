@@ -1,7 +1,17 @@
 <template>
   <div class="">
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h4 class="fw-bold">Quản Lý Đơn Hàng</h4>
+      <div>
+        <h4 class="fw-bold">Quản Lý Đơn Hàng</h4>
+        <!-- Thêm thông báo đơn hàng cần xử lý -->
+        <div
+          v-if="pendingOrdersCount > 0"
+          class="mt-2 alert alert-warning py-1 px-3 d-inline-block"
+        >
+          <i class="fas fa-exclamation-circle me-2"></i>
+          <strong>Bạn đang có {{ pendingOrdersCount }} đơn cần xử lí</strong>
+        </div>
+      </div>
       <div class="d-flex gap-2">
         <button class="btn btn-success" @click="exportToExcel">
           <i class="fas fa-file-excel me-2"></i>Xuất Excel
@@ -72,6 +82,29 @@
             />
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Số lượng hiển thị trên mỗi trang & Tổng số đơn hàng -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <span class="me-2">Hiển thị:</span>
+        <select
+          v-model="itemsPerPage"
+          class="form-select form-select-sm d-inline-block"
+          style="width: auto"
+        >
+          <option :value="5">5</option>
+          <option :value="10">10</option>
+          <option :value="15">15</option>
+          <option :value="20">20</option>
+        </select>
+        <span class="ms-2">đơn hàng mỗi trang</span>
+      </div>
+      <div>
+        <span
+          >Tổng số: <strong>{{ filteredOrders.length }}</strong> đơn hàng</span
+        >
       </div>
     </div>
 
@@ -281,7 +314,7 @@
                         <tr>
                           <th>Sản phẩm</th>
                           <th class="text-end">Giá</th>
-                          <th class="text-center">Số lượng</th>
+                          <th class="text-center">SL</th>
                           <th class="text-end">Thành tiền</th>
                         </tr>
                       </thead>
@@ -329,7 +362,9 @@
                           </td>
                           <td class="text-end">
                             <strong>{{
-                              formatCurrency(selectedOrder.totalPrice)
+                              formatCurrency(
+                                calculateSubtotal(selectedOrder.items)
+                              )
                             }}</strong>
                           </td>
                         </tr>
@@ -364,10 +399,7 @@
                           </td>
                           <td class="text-end">
                             <strong>{{
-                              formatCurrency(
-                                selectedOrder.totalPrice +
-                                  selectedOrder.shippingFeeDetails.finalFee
-                              )
+                              formatCurrency(selectedOrder.totalPrice)
                             }}</strong>
                           </td>
                         </tr>
@@ -379,6 +411,16 @@
             </div>
           </div>
           <div class="modal-footer">
+            <button
+              v-if="selectedOrder && selectedOrder.status === 'pending'"
+              type="button"
+              class="btn btn-danger me-auto"
+              @click="cancelOrder(selectedOrder._id)"
+              :disabled="cancelLoading"
+            >
+              <i class="fas fa-ban me-1"></i>
+              {{ cancelLoading ? "Đang hủy..." : "Hủy đơn hàng" }}
+            </button>
             <button
               type="button"
               class="btn btn-secondary"
@@ -397,16 +439,21 @@
 import { ref, computed, onMounted, watch } from "vue";
 import axios from "axios";
 import * as bootstrap from "bootstrap";
+import { useAuthStore } from "../../store/AuthStore"; // Import AuthStore
+// Thêm import SweetAlert2
+import Swal from "sweetalert2";
 
 export default {
   name: "OrderManager",
   setup() {
     // State
+    const authStore = useAuthStore(); // Lấy store auth
     const orders = ref([]);
     const currentPage = ref(1);
-    const itemsPerPage = ref(5); // Sửa lại thành 10 items/trang
+    const itemsPerPage = ref(10);
     const selectedOrder = ref(null);
     const loading = ref(false);
+    const cancelLoading = ref(false);
 
     const error = ref(null);
     const filters = ref({
@@ -454,6 +501,11 @@ export default {
       });
     });
 
+    // Thêm computed property để đếm số lượng đơn hàng đang ở trạng thái pending
+    const pendingOrdersCount = computed(() => {
+      return orders.value.filter((order) => order.status === "pending").length;
+    });
+
     // Thêm computed cho totalPages
     const totalPages = computed(() => {
       return Math.ceil(filteredOrders.value.length / itemsPerPage.value);
@@ -466,14 +518,20 @@ export default {
       return filteredOrders.value.slice(start, end);
     });
 
-    // Watch for filter changes
+    // Watch for filter changes and itemsPerPage changes
     watch(
-      [filters, currentPage],
+      [filters, itemsPerPage],
       () => {
-        fetchOrders();
+        currentPage.value = 1; // Reset to page 1 when filters or page size changes
       },
       { deep: true }
     );
+
+    // Separate watch for page changes
+    watch(currentPage, () => {
+      // You can add code here if you need to do something when page changes
+      // Like scrolling to top, etc.
+    });
 
     // Mounted hook
     onMounted(() => {
@@ -486,6 +544,14 @@ export default {
         style: "currency",
         currency: "VND",
       }).format(value);
+    };
+
+    // Thêm hàm tính tổng giá trị sản phẩm
+    const calculateSubtotal = (items) => {
+      return items.reduce(
+        (total, item) => total + item.priceAtTime * item.quantity,
+        0
+      );
     };
 
     const formatDate = (dateString) => {
@@ -539,6 +605,73 @@ export default {
       alert("Tính năng xuất Excel đang được phát triển");
     };
 
+    // Cancel order function
+    const cancelOrder = async (orderId) => {
+      // Tìm đơn hàng cần hủy để lấy orderCode
+      const orderToCancel = orders.value.find((order) => order._id === orderId);
+      if (!orderToCancel) return;
+
+      // Sử dụng SweetAlert2 để xác nhận trước khi hủy
+      const result = await Swal.fire({
+        title: "Xác nhận hủy đơn hàng",
+        text: `Bạn có chắc chắn muốn hủy đơn hàng ${orderToCancel.orderCode}?`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Đồng ý, hủy đơn!",
+        cancelButtonText: "Không, giữ lại",
+      });
+
+      if (!result.isConfirmed) return;
+
+      cancelLoading.value = true;
+      try {
+        // Gọi API với endpoint và header mới
+        await axios.post(
+          `http://localhost:3000/api/order/admin/cancel/${orderToCancel.orderCode}`,
+          {}, // body rỗng nếu không cần gửi dữ liệu
+          {
+            headers: {
+              "Content-Type": "application/json",
+              token: import.meta.env.VITE_GHN_API_TOKEN_DEV,
+              shopId: import.meta.env.VITE_GHN_SHOP_ID_DEV,
+            },
+          }
+        );
+
+        // Cập nhật trạng thái đơn hàng trong danh sách
+        const index = orders.value.findIndex((order) => order._id === orderId);
+        if (index !== -1) {
+          orders.value[index].status = "canceled";
+        }
+
+        // Cập nhật đơn hàng đang được xem nếu trùng với đơn hàng bị hủy
+        if (selectedOrder.value && selectedOrder.value._id === orderId) {
+          selectedOrder.value.status = "canceled";
+        }
+
+        // Thông báo thành công với SweetAlert2
+        await Swal.fire({
+          title: "Thành công!",
+          text: "Đơn hàng đã được hủy thành công",
+          icon: "success",
+          confirmButtonColor: "#3085d6",
+        });
+      } catch (err) {
+        // Hiển thị lỗi với SweetAlert2
+        await Swal.fire({
+          title: "Lỗi!",
+          text: err.response?.data?.message || "Có lỗi xảy ra khi hủy đơn hàng",
+          icon: "error",
+          confirmButtonColor: "#3085d6",
+        });
+        console.error("Error canceling order:", err);
+      } finally {
+        cancelLoading.value = false;
+      }
+    };
+
     return {
       orders,
       currentPage,
@@ -548,6 +681,7 @@ export default {
       loading,
       error,
       paginatedOrders,
+      filteredOrders, // Make sure filteredOrders is returned for the template
       formatCurrency,
       formatDate,
       formatTime,
@@ -557,6 +691,10 @@ export default {
       viewOrderDetail,
       exportToExcel,
       totalPages, // Đảm bảo export totalPages
+      cancelOrder,
+      cancelLoading,
+      pendingOrdersCount, // Đảm bảo export pendingOrdersCount
+      calculateSubtotal, // Đảm bảo export function calculateSubtotal
     };
   },
 };

@@ -98,7 +98,7 @@
             </li>
 
             <li class="d-flex justify-content-between align-items-center py-2">
-              <router-link to="/brand" class="text-dark text-decoration-none"
+              <router-link to="/brands" class="text-dark text-decoration-none"
                 >Thương hiệu</router-link
               >
             </li>

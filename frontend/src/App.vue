@@ -3,17 +3,21 @@
     <Header v-if="!$route.meta.hideHeaderFooter" />
     <router-view />
     <Footer v-if="!$route.meta.hideHeaderFooter" />
+    <Chatbot />
+    <!-- Thêm component Chatbot -->
   </div>
 </template>
 
 <script>
 import Header from "./components/user/Header.vue";
 import Footer from "./components/user/Footer.vue";
+import Chatbot from "./components/user/Chatbot.vue"; // Import Chatbot component
 
 export default {
   components: {
     Header,
     Footer,
+    Chatbot, // Đăng ký component
   },
 };
 </script>

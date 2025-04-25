@@ -127,7 +127,6 @@ export default defineComponent({
       }
     };
 
-    //đặt hàng
     const placeOrder = async () => {
       if (cart.value.items.length === 0) {
         Swal.fire("Thông báo", "Giỏ hàng trống!", "warning");
@@ -209,21 +208,36 @@ export default defineComponent({
           }
         );
 
-        await Swal.fire({
-          title: "Đặt hàng thành công!",
-          text: "Đơn hàng của bạn đã được tạo.",
-          icon: "success",
-          confirmButtonText: "OK",
-        });
+        if (response.status === 201) {
+          await Swal.fire({
+            title: "Đặt hàng thành công!",
+            text: "Đơn hàng của bạn đã được tạo.",
+            icon: "success",
+            confirmButtonText: "OK",
+          });
+        }
       } catch (error) {
         console.error("❌ Lỗi khi tạo đơn hàng:", error);
 
-        Swal.fire({
-          title: "Lỗi!",
-          text: "Đã xảy ra lỗi khi đặt hàng.",
-          icon: "error",
-          confirmButtonText: "Thử lại",
-        });
+        // Nếu có lỗi từ server, hiển thị thông báo lỗi cụ thể
+        if (error.response) {
+          const serverError = error.response.data;
+
+          Swal.fire({
+            title: "Lỗi!",
+            text: serverError.message || "Đã xảy ra lỗi khi tạo đơn hàng.",
+            icon: "error",
+            confirmButtonText: "Thử lại",
+          });
+        } else {
+          // Nếu không có lỗi cụ thể, hiển thị lỗi không xác định
+          Swal.fire({
+            title: "Lỗi không xác định!",
+            text: "Đã xảy ra lỗi khi tạo đơn hàng. Vui lòng thử lại sau.",
+            icon: "error",
+            confirmButtonText: "Thử lại",
+          });
+        }
       } finally {
         loading.value = false;
       }

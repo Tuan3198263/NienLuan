@@ -75,6 +75,19 @@
               >
                 Xem chi tiết
               </router-link>
+              <!-- Nút hủy đơn hàng - chỉ hiển thị khi trạng thái là pending -->
+              <button
+                v-if="order.status === 'pending'"
+                class="btn btn-danger ms-2"
+                @click="cancelOrder(order._id)"
+                :disabled="cancelLoading"
+              >
+                <span
+                  v-if="cancelLoading"
+                  class="spinner-border spinner-border-sm me-2"
+                ></span>
+                Hủy đơn
+              </button>
             </div>
           </div>
         </div>
@@ -125,14 +138,16 @@
 import { ref, computed, onMounted } from "vue";
 import axios from "axios";
 import { useAuthStore } from "../../store/AuthStore";
+import Swal from "sweetalert2";
 
 const searchQuery = ref("");
 const selectedStatus = ref("all");
 const authStore = useAuthStore();
+const cancelLoading = ref(false);
 
 const orders = ref([]);
 const currentPage = ref(1);
-const pageSize = 2; // Mỗi trang hiển thị 2 đơn hàng
+const pageSize = 3; // Mỗi trang hiển thị 2 đơn hàng
 
 const getStatusClass = (status) => {
   return {
@@ -147,10 +162,10 @@ const getStatusClass = (status) => {
 const statuses = [
   { label: "Tất cả", value: "all" },
   { label: "Chờ xác nhận", value: "pending" },
-  { label: "Đã xác nhận", value: "confirmed" },
-  { label: "Đang giao", value: "shipping" },
+  { label: "Đã xác nhận", value: "processed" },
+  { label: "Đang giao", value: "shipped" },
   { label: "Đã nhận", value: "delivered" },
-  { label: "Đã hủy", value: "cancelled" },
+  { label: "Đã hủy", value: "canceled" },
   { label: "Đã trả", value: "returned" },
 ];
 
@@ -228,6 +243,60 @@ const formatPrice = (price) => {
 const filterOrders = async (status) => {
   selectedStatus.value = status;
   await fetchOrders();
+};
+
+const cancelOrder = async (orderId) => {
+  const orderToCancel = orders.value.find((order) => order._id === orderId);
+  if (!orderToCancel) return;
+
+  const result = await Swal.fire({
+    title: "Xác nhận hủy đơn hàng",
+    text: `Bạn có chắc chắn muốn hủy đơn hàng ${orderToCancel.orderCode}?`,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    confirmButtonText: "Đồng ý, hủy đơn!",
+    cancelButtonText: "Không, giữ lại",
+  });
+
+  if (!result.isConfirmed) return;
+
+  cancelLoading.value = true;
+  try {
+    await axios.post(
+      `http://localhost:3000/api/order/cancel/${orderToCancel.orderCode}`,
+      {},
+      {
+        headers: {
+          "Content-Type": "application/json",
+          token: import.meta.env.VITE_GHN_API_TOKEN_DEV,
+          shopId: import.meta.env.VITE_GHN_SHOP_ID_DEV,
+          Authorization: `Bearer ${authStore.token}`,
+        },
+      }
+    );
+
+    // Cập nhật trạng thái đơn hàng trong danh sách ngay lập tức
+    orderToCancel.status = "canceled";
+
+    await Swal.fire({
+      title: "Thành công!",
+      text: "Đơn hàng đã được hủy thành công",
+      icon: "success",
+      confirmButtonColor: "#3085d6",
+    });
+  } catch (err) {
+    await Swal.fire({
+      title: "Lỗi!",
+      text: err.response?.data?.message || "Có lỗi xảy ra khi hủy đơn hàng",
+      icon: "error",
+      confirmButtonColor: "#3085d6",
+    });
+    console.error("Error canceling order:", err);
+  } finally {
+    cancelLoading.value = false;
+  }
 };
 
 onMounted(fetchOrders);

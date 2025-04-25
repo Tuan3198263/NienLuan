@@ -2,7 +2,7 @@ const Product = require('../models/product');
 const cloudinary = require('../config/cloudinaryConfig');
 const mongoose = require('mongoose');  // Thêm dòng này
 const Category = require('../models/category')
-
+const Brand = require('../models/brand')
 
 
 // Lấy danh sách tất cả sản phẩm
@@ -296,6 +296,44 @@ exports.searchProducts = async (req, res) => {
   }
 };
 
+// Lấy tất cả sản phẩm theo brandId
+exports.getProductsByBrandId = async (req, res) => {
+  const { brandId } = req.params; // Lấy brandId từ URL params
+
+  try {
+    // Kiểm tra thương hiệu có tồn tại không
+    const brand = await Brand.findById(brandId);
+    if (!brand) {
+      return res.status(404).json({ message: 'Thương hiệu không tồn tại' });
+    }
+
+    // Tìm các sản phẩm thuộc thương hiệu này
+    const products = await Product.find({ brand: brandId, active: true })
+      .populate('category', 'name') // Lấy tên danh mục
+      .populate('brand', 'name') // Lấy tên thương hiệu
+      .sort({ createdAt: -1 }); // Sắp xếp theo thời gian tạo mới nhất
+
+    // Kiểm tra nếu không có sản phẩm
+    if (products.length === 0) {
+      return res.status(404).json({
+        message: 'Không có sản phẩm nào thuộc thương hiệu này. Hãy thử thương hiệu khác.',
+      });
+    }
+
+    // Trả về danh sách sản phẩm
+    res.status(200).json({
+      message: 'Danh sách sản phẩm theo thương hiệu',
+      totalProducts: products.length, // Tổng số sản phẩm
+      products, // Mảng chứa các sản phẩm
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: 'Lỗi server khi lấy danh sách sản phẩm theo thương hiệu',
+      error,
+    });
+  }
+};
 
 
 

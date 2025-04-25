@@ -76,6 +76,9 @@ const pageTitle = computed(() => {
   if (route.path.startsWith("/cart")) {
     return `Giỏ hàng`;
   }
+  if (route.path.startsWith("/brands")) {
+    return `Thương hiệu`;
+  }
   if (route.path.startsWith("/order-details")) {
     return `Chi tiết đơn hàng`;
   }
@@ -88,7 +91,11 @@ const pageTitle = computed(() => {
       case "/profile/orders":
         return "Đơn hàng";
       case "/profile/wishlist":
-        return "Yêu thích";
+        return "Sản phẩm yêu thích";
+      case "/profile/reviewed":
+        return "Sản phẩm đã đánh giá";
+      case "/profile/pending-reviews":
+        return "Sản phẩm chờ đánh giá";
       default:
         return "Thông tin cá nhân";
     }

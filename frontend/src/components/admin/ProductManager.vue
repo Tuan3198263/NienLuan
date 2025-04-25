@@ -1,7 +1,26 @@
 <template>
   <div class="">
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h4 class="fw-bold">Quản Lý Sản Phẩm</h4>
+      <div>
+        <h4 class="fw-bold">Quản Lý Sản Phẩm</h4>
+        <!-- Thêm thông báo sản phẩm sắp hết hoặc đã hết hàng -->
+        <div class="mt-2">
+          <div
+            v-if="outOfStockCount > 0"
+            class="alert alert-danger py-1 px-3 d-inline-block me-2"
+          >
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <strong>Có {{ outOfStockCount }} sản phẩm đã hết hàng</strong>
+          </div>
+          <div
+            v-if="lowStockCount > 0"
+            class="alert alert-warning py-1 px-3 d-inline-block"
+          >
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Có {{ lowStockCount }} sản phẩm sắp hết hàng</strong>
+          </div>
+        </div>
+      </div>
       <button class="btn btn-primary" @click="goToAddProduct">
         Thêm sản phẩm
       </button>
@@ -34,7 +53,7 @@
             />
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
           <div class="input-group">
             <span class="input-group-text"><i class="fas fa-cogs"></i></span>
             <input
@@ -45,7 +64,7 @@
             />
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
           <div class="input-group">
             <span class="input-group-text"
               ><i class="fas fa-toggle-on"></i
@@ -57,6 +76,42 @@
             </select>
           </div>
         </div>
+        <!-- Thêm bộ lọc số lượng -->
+        <div class="col-md-2">
+          <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-cubes"></i></span>
+            <select v-model="filters.stock" class="form-select">
+              <option value="">Tất cả số lượng</option>
+              <option value="outOfStock">Đã hết hàng (0)</option>
+              <option value="lowStock">Sắp hết (≤ 5)</option>
+              <option value="inStock">Còn hàng (> 5)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Số lượng hiển thị trên mỗi trang -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <span class="me-2">Hiển thị:</span>
+        <select
+          v-model="itemsPerPage"
+          class="form-select form-select-sm d-inline-block"
+          style="width: auto"
+        >
+          <option :value="5">5</option>
+          <option :value="10">10</option>
+          <option :value="15">15</option>
+          <option :value="20">20</option>
+        </select>
+        <span class="ms-2">sản phẩm mỗi trang</span>
+      </div>
+      <div>
+        <span
+          >Tổng số: <strong>{{ filteredProducts.length }}</strong> sản
+          phẩm</span
+        >
       </div>
     </div>
 
@@ -80,6 +135,10 @@
           v-if="paginatedProducts.length > 0"
           v-for="(product, index) in paginatedProducts"
           :key="product._id"
+          :class="{
+            'table-danger': product.stock === 0,
+            'table-warning': product.stock > 0 && product.stock <= 5,
+          }"
         >
           <td>{{ (currentPage - 1) * itemsPerPage + index + 1 }}</td>
           <td>{{ product.name }}</td>
@@ -101,7 +160,27 @@
             {{ product.brand ? product.brand.name : "Không có thương hiệu" }}
           </td>
           <td>{{ formatCurrency(product.price) }}</td>
-          <td class="text-center">{{ product.stock }}</td>
+          <td class="text-center">
+            <span
+              :class="{
+                'badge bg-danger': product.stock === 0,
+                'badge bg-warning text-dark':
+                  product.stock > 0 && product.stock <= 5,
+                'badge bg-success': product.stock > 5,
+              }"
+              style="font-size: 0.9em; padding: 5px 8px"
+            >
+              {{ product.stock }}
+              <i
+                v-if="product.stock === 0"
+                class="fas fa-times-circle ms-1"
+              ></i>
+              <i
+                v-else-if="product.stock <= 5"
+                class="fas fa-exclamation-triangle ms-1"
+              ></i>
+            </span>
+          </td>
           <td class="text-center">
             <button
               :class="['btn', product.active ? 'btn-success' : 'btn-secondary']"
@@ -127,6 +206,9 @@
             <button
               class="btn btn-sm btn-outline-danger"
               @click="deleteProduct(product)"
+              disabled
+              title="Tính năng xóa đã bị vô hiệu hóa để tránh xóa nhầm"
+              style="opacity: 0.6; cursor: not-allowed"
             >
               <i class="fas fa-trash"></i>
             </button>
@@ -140,7 +222,6 @@
       </tbody>
     </table>
 
-    <!-- Phân trang -->
     <!-- Phân trang -->
     <nav>
       <ul class="pagination justify-content-center">
@@ -175,7 +256,7 @@
   </div>
 </template>
 <script>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import Swal from "sweetalert2"; // Nếu sử dụng npm
 import axios from "axios";
@@ -195,9 +276,10 @@ export default {
       category: "",
       brand: "",
       active: "",
+      stock: "", // Thêm filter cho tồn kho
     });
 
-    const itemsPerPage = ref(5); // Số sản phẩm mỗi trang
+    const itemsPerPage = ref(10); // Số sản phẩm mỗi trang
     const currentPage = ref(1);
 
     // Hàm để lấy dữ liệu sản phẩm từ API
@@ -210,6 +292,20 @@ export default {
         console.error("Lỗi khi lấy dữ liệu sản phẩm:", error);
       }
     };
+
+    // Computed để đếm sản phẩm hết hàng
+    const outOfStockCount = computed(() => {
+      if (!Array.isArray(products.value)) return 0;
+      return products.value.filter((product) => product.stock === 0).length;
+    });
+
+    // Computed để đếm sản phẩm sắp hết hàng (stock <= 5)
+    const lowStockCount = computed(() => {
+      if (!Array.isArray(products.value)) return 0;
+      return products.value.filter(
+        (product) => product.stock > 0 && product.stock <= 5
+      ).length;
+    });
 
     const filteredProducts = computed(() => {
       if (!Array.isArray(products.value)) return []; // Kiểm tra xem products.value có phải là mảng không
@@ -239,8 +335,25 @@ export default {
           filters.value.active === "" ||
           product.active === (filters.value.active === "true");
 
-        return nameMatch && categoryMatch && brandMatch && activeMatch;
+        // Kiểm tra filter số lượng tồn kho
+        let stockMatch = true;
+        if (filters.value.stock === "outOfStock") {
+          stockMatch = product.stock === 0;
+        } else if (filters.value.stock === "lowStock") {
+          stockMatch = product.stock > 0 && product.stock <= 5;
+        } else if (filters.value.stock === "inStock") {
+          stockMatch = product.stock > 5;
+        }
+
+        return (
+          nameMatch && categoryMatch && brandMatch && activeMatch && stockMatch
+        );
       });
+    });
+
+    // Watch cho itemsPerPage để reset về trang 1 khi thay đổi số lượng hiển thị
+    watch(itemsPerPage, () => {
+      currentPage.value = 1;
     });
 
     const totalPages = computed(() => {
@@ -383,6 +496,8 @@ export default {
       paginatedProducts,
       onProductUpdated, // Trả về hàm cho component con gọi
       goToAddProduct,
+      outOfStockCount, // Thêm biến đếm sản phẩm hết hàng
+      lowStockCount, // Thêm biến đếm sản phẩm sắp hết hàng
     };
   },
 };
@@ -456,5 +571,17 @@ export default {
 .pagination .page-link:hover {
   background-color: #0056b3;
   color: white;
+}
+
+/* Thêm style cho badge số lượng */
+.badge {
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+/* Thêm style cho hàng cảnh báo */
+.table-warning td,
+.table-danger td {
+  font-weight: 500;
 }
 </style>

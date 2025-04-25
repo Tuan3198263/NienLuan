@@ -24,6 +24,30 @@
       </button>
     </div>
 
+    <!-- Số lượng hiển thị trên mỗi trang & Tổng số thương hiệu -->
+    <div class="d-flex justify-content-between align-items-center my-3">
+      <div>
+        <span class="me-2">Hiển thị:</span>
+        <select
+          v-model="pageSize"
+          class="form-select form-select-sm d-inline-block"
+          style="width: auto"
+        >
+          <option :value="5">5</option>
+          <option :value="10">10</option>
+          <option :value="15">15</option>
+          <option :value="20">20</option>
+        </select>
+        <span class="ms-2">thương hiệu mỗi trang</span>
+      </div>
+      <div>
+        <span
+          >Tổng số: <strong>{{ filteredBrands.length }}</strong> thương
+          hiệu</span
+        >
+      </div>
+    </div>
+
     <!-- Form Thêm Thương hiệu -->
     <div
       class="modal fade"
@@ -245,7 +269,7 @@
 import { Modal } from "bootstrap"; // Import Modal từ Bootstrap (Lên trên cùng)
 import { nextTick } from "vue";
 import axios from "axios";
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue"; // Added watch
 import { useToast } from "vue-toastification"; // Import useToast từ vue-toastification
 import Swal from "sweetalert2";
 import Quill from "quill"; // Import Quill
@@ -261,11 +285,16 @@ export default {
     });
     const searchQuery = ref("");
     const currentPage = ref(1);
-    const pageSize = ref(5);
+    const pageSize = ref(10);
     const toast = useToast();
 
     let quillEditor = null;
     let editQuillEditor = null;
+
+    // Watch pageSize changes to reset to page 1
+    watch(pageSize, () => {
+      currentPage.value = 1;
+    });
 
     // Khởi tạo Quill editor
     const initQuill = () => {
@@ -564,6 +593,7 @@ export default {
       currentPage,
       pageSize,
       paginatedBrands,
+      filteredBrands, // Make sure filteredBrands is returned
       totalPages,
       changePage, // Đảm bảo trả về hàm changePage
       formatDate,

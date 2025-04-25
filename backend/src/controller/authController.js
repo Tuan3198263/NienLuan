@@ -1,24 +1,95 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const cloudinary = require('cloudinary').v2;
+const eventEmitter = require("../events/event.js"); // Import EventEmitter
+const ShippingAddress = require('../models/shippingAddress');
+const Order = require('../models/order');
+const Review = require('../models/review');
 
 
 // API lấy tất cả người dùng
 exports.getAllUsers = async (req, res) => {
     try {
-        const users = await User.find(); // Lấy tất cả người dùng trong cơ sở dữ liệu
-        res.json({ message: 'Lấy tất cả người dùng thành công!', users });
+        // Lấy tất cả người dùng từ cơ sở dữ liệu
+        const users = await User.find();
+        
+        // Mảng kết quả với thông tin mở rộng
+        const usersWithDetails = [];
+        
+        // Xử lý từng người dùng để lấy thông tin bổ sung
+        for (const user of users) {
+            // Lấy địa chỉ nhận hàng của người dùng
+            const shippingAddresses = await ShippingAddress.find({ userId: user._id });
+            
+            // Lấy tất cả đơn hàng của người dùng
+            const orders = await Order.find({ userId: user._id });
+            
+            // Lấy tất cả đánh giá của người dùng
+            const reviews = await Review.find({ userId: user._id }).populate('productId', 'name');
+            
+            // Tính toán các thống kê đơn hàng
+            const orderStats = {
+                totalOrders: orders.length,
+                pendingOrders: orders.filter(order => order.status === 'pending').length,
+                processedOrders: orders.filter(order => order.status === 'processed').length,
+                shippedOrders: orders.filter(order => order.status === 'shipped').length,
+                deliveredOrders: orders.filter(order => order.status === 'delivered').length,
+                canceledOrders: orders.filter(order => order.status === 'canceled').length,
+                returnedOrders: orders.filter(order => order.status === 'returned').length,
+                totalSpent: orders
+                    .filter(order => order.status === 'delivered')
+                    .reduce((sum, order) => sum + order.totalPrice, 0)
+            };
+            
+            // Thống kê về sản phẩm đã đánh giá
+            const reviewStats = {
+                totalReviews: reviews.length,
+                averageRating: reviews.length > 0 
+                    ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1) 
+                    : 0,
+                reviewedProducts: reviews.map(review => ({
+                    productId: review.productId._id,
+                    productName: review.productId ? review.productId.name : 'Sản phẩm không tồn tại',
+                    rating: review.rating,
+                    comment: review.comment,
+                    createdAt: review.createdAt
+                }))
+            };
+            
+            // Tạo đối tượng người dùng mở rộng
+            const userWithDetails = {
+                _id: user._id,
+                fullName: user.fullName,
+                email: user.email,
+                phone: user.phone,
+                password: user.password,
+                role: user.role,
+                ban: user.ban,
+                avatar: user.avatar,
+                createdAt: user.createdAt,
+                shippingAddresses,
+                orderStats,
+                reviewStats
+            };
+            
+            usersWithDetails.push(userWithDetails);
+        }
+        
+        res.json({ 
+            message: 'Lấy tất cả người dùng thành công!', 
+            users: usersWithDetails 
+        });
     } catch (error) {
         res.status(500).json({ message: 'Lỗi máy chủ.', error: error.message });
     }
 };
 
-
-// Đăng ký người dùng
+// 📌 Đăng ký người dùng
 exports.register = async (req, res) => {
     try {
-        const { fullName, email, password, phone } = req.body; // Bỏ address
+        const { fullName, email, password, phone } = req.body;
         const existingUser = await User.findOne({ email });
+
         if (existingUser) {
             return res.status(400).json({ message: 'Email đã được sử dụng.' });
         }
@@ -26,47 +97,49 @@ exports.register = async (req, res) => {
         const newUser = new User({ fullName, email, password, phone });
         await newUser.save();
 
+        // 🔥 Phát sự kiện "newUserRegistered"
+        eventEmitter.emit("newUserRegistered", newUser);
+
         res.status(201).json({ message: 'Đăng ký thành công!' });
     } catch (error) {
         res.status(500).json({ message: 'Lỗi máy chủ.', error: error.message });
     }
 };
 
-
-
-// Đăng ký Admin với mã xác thực
+// 📌 Đăng ký Admin với mã xác thực
 exports.registerAdmin = async (req, res) => {
     try {
-        const { fullName, email, password, phone, verificationCode } = req.body; // Mã xác thực từ đầu vào
+        const { fullName, email, password, phone, verificationCode } = req.body;
 
-        const validVerificationCode = process.env.ADMIN_VERIFICATION_CODE; // Mã xác thực lưu trong biến môi trường
+        const validVerificationCode = process.env.ADMIN_VERIFICATION_CODE;
         if (verificationCode !== validVerificationCode) {
             return res.status(400).json({ message: 'Mã xác thực không hợp lệ.' });
         }
 
-        // Kiểm tra nếu email đã tồn tại
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ message: 'Email đã được sử dụng.' });
         }
 
-        // Tạo một người dùng mới với vai trò là "admin"
-        const newUser = new User({ 
+        const newAdmin = new User({ 
             fullName, 
             email, 
             password, 
             phone,
-            role: 'admin' // Đặt vai trò là "admin"
+            role: 'admin'
         });
 
-        // Lưu vào cơ sở dữ liệu
-        await newUser.save();
+        await newAdmin.save();
+
+        // 🔥 Phát sự kiện "newAdminRegistered"
+        eventEmitter.emit("newAdminRegistered", newAdmin);
 
         res.status(201).json({ message: 'Tạo tài khoản admin thành công!' });
     } catch (error) {
         res.status(500).json({ message: 'Lỗi máy chủ.', error: error.message });
     }
 };
+
 
 // Đăng nhập người dùng
 exports.login = async (req, res) => {

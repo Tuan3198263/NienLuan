@@ -1,116 +1,217 @@
 <template>
-  <footer class="py-5 bg-dark text-light">
+  <footer class="bg-dark text-white py-5">
     <div class="container">
-      <!-- Logo -->
-      <div class="text-center mb-4">
-        <span class="fs-2 fw-bold text-white">GL</span>
-        <span class="fs-2 fw-bold text-pink">O</span>
-        <span class="fs-2 fw-bold text-white">WN</span>
-      </div>
+      <div class="row">
+        <!-- Brand Column -->
+        <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
+          <h2 class="h4 mb-3">Glown</h2>
+          <p class="small mb-3">
+            Glown - Bringing affordable luxury to the urban population
+          </p>
 
-      <!-- Footer Links -->
-      <div class="row text-center text-md-left">
-        <!-- Contact Information Section -->
-        <div class="col-12 col-md-3 mb-4">
-          <h5 class="font-weight-bold mb-3">CONTACT INFORMATION</h5>
+          <!-- App Store Links -->
+          <div class="d-flex flex-column mb-3">
+            <a href="#" class="text-white text-decoration-none mb-2">
+              <div class="d-flex align-items-center">
+                <i class="fab fa-apple me-2 fs-4"></i>
+                <div>
+                  <div class="small">Get it on the</div>
+                  <div>App Store</div>
+                </div>
+              </div>
+            </a>
+            <a href="#" class="text-white text-decoration-none">
+              <div class="d-flex align-items-center">
+                <i class="fab fa-google-play me-2 fs-4"></i>
+                <div>
+                  <div class="small">Android app on</div>
+                  <div>Google Play</div>
+                </div>
+              </div>
+            </a>
+          </div>
+
+          <!-- Hotline -->
+          <div class="mb-3">
+            <div>Hotline: <span class="fw-bold">1800 1234</span></div>
+          </div>
+
+          <!-- Social Media Icons -->
+          <div class="d-flex gap-3">
+            <a href="#" class="text-white">
+              <i class="fab fa-facebook-f fs-5"></i>
+            </a>
+            <a href="#" class="text-white">
+              <i class="fab fa-instagram fs-5"></i>
+            </a>
+            <a href="#" class="text-white">
+              <i class="fab fa-facebook-messenger fs-5"></i>
+            </a>
+            <a href="#" class="text-white">
+              <i class="fab fa-pinterest fs-5"></i>
+            </a>
+            <a href="#" class="text-white">
+              <i class="fab fa-tiktok fs-5"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- Categories Column -->
+        <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
+          <h5 class="mb-3">Danh mục</h5>
           <ul class="list-unstyled">
             <li class="mb-2">
-              <i class="fas fa-phone-alt mr-2"></i>+1 (555) 123-4567
+              <a href="#" class="text-white text-decoration-none">Quà tặng</a>
             </li>
             <li class="mb-2">
-              <i class="fas fa-envelope mr-2"></i>cs@glowify.com
+              <a href="#" class="text-white text-decoration-none"
+                >Hộp làm đẹp</a
+              >
             </li>
             <li class="mb-2">
-              <i class="fas fa-map-marker-alt mr-2"></i>123 Anywhere Street,
-              Anytown USA
+              <a href="#" class="text-white text-decoration-none">Phụ kiện</a>
+            </li>
+            <li class="mb-2">
+              <a href="#" class="text-white text-decoration-none"
+                >Chăm sóc da</a
+              >
+            </li>
+            <li class="mb-2">
+              <a href="#" class="text-white text-decoration-none">Trang điểm</a>
+            </li>
+            <li class="mb-2">
+              <a href="#" class="text-white text-decoration-none"
+                >Thực phẩm chức năng</a
+              >
+            </li>
+            <li class="mb-2">
+              <a href="#" class="text-white text-decoration-none"
+                >Chăm sóc cá nhân</a
+              >
             </li>
           </ul>
         </div>
 
-        <!-- My Account Section -->
-        <div class="col-12 col-md-2 mb-4">
-          <h5 class="font-weight-bold mb-3">MY ACCOUNT</h5>
+        <!-- Guidelines Column -->
+        <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
+          <h5 class="mb-3">Hướng dẫn</h5>
           <ul class="list-unstyled">
-            <li class="mb-2">Sign In</li>
-            <li class="mb-2">New Bag</li>
-            <li class="mb-2">My Wishlist</li>
-            <li class="mb-2">Track My Order</li>
-            <li class="mb-2">Help</li>
+            <li class="mb-2">
+              <a href="#" class="text-white text-decoration-none"
+                >HDSD & Bảo hành</a
+              >
+            </li>
+            <li class="mb-2">
+              <a href="#" class="text-white text-decoration-none"
+                >Hướng dẫn đặt hàng</a
+              >
+            </li>
+            <li class="mb-2">
+              <a href="#" class="text-white text-decoration-none"
+                >Phương thức giao hàng</a
+              >
+            </li>
+            <li class="mb-2">
+              <a href="#" class="text-white text-decoration-none"
+                >Chính sách đổi trả</a
+              >
+            </li>
+            <li class="mb-2">
+              <a href="#" class="text-white text-decoration-none"
+                >Chính sách bảo mật</a
+              >
+            </li>
+            <li class="mb-2">
+              <a href="#" class="text-white text-decoration-none"
+                >Privacy Info</a
+              >
+            </li>
+            <li class="mb-2">
+              <a href="#" class="text-white text-decoration-none"
+                >Điều khoản sử dụng</a
+              >
+            </li>
           </ul>
         </div>
 
-        <!-- Information Section -->
-        <div class="col-12 col-md-2 mb-4">
-          <h5 class="font-weight-bold mb-3">INFORMATION</h5>
+        <!-- Information Column -->
+        <div class="col-lg-3 col-md-6">
+          <h5 class="mb-3">Thông tin</h5>
           <ul class="list-unstyled">
-            <li class="mb-2">Delivery Information</li>
-            <li class="mb-2">Blog</li>
-            <li class="mb-2">FAQ</li>
-            <li class="mb-2">Contact Us</li>
-            <li class="mb-2">Sitemap</li>
+            <li class="mb-2">
+              <a href="#" class="text-white text-decoration-none"
+                >Giới thiệu về Glown</a
+              >
+            </li>
+            <li class="mb-2">
+              <a href="#" class="text-white text-decoration-none">Tuyển dụng</a>
+            </li>
+            <li class="mb-2">
+              <a href="#" class="text-white text-decoration-none"
+                >Chương trình GlownCoin</a
+              >
+            </li>
+            <li class="mb-2">
+              <a href="#" class="text-white text-decoration-none"
+                >Hỗ trợ Đơn hàng</a
+              >
+            </li>
+            <li class="mb-2">
+              <a href="#" class="text-white text-decoration-none"
+                >Hệ thống cửa hàng Glown</a
+              >
+            </li>
+            <li class="mb-2">
+              <a href="#" class="text-white text-decoration-none"
+                >Mời bạn bè - Nhận thưởng ngay</a
+              >
+            </li>
           </ul>
         </div>
-
-        <!-- Customer Services Section -->
-        <div class="col-12 col-md-2 mb-4">
-          <h5 class="font-weight-bold mb-3">CUSTOMER SERVICES</h5>
-          <ul class="list-unstyled">
-            <li class="mb-2">Shipping & Returns</li>
-            <li class="mb-2">Secure Shopping</li>
-            <li class="mb-2">International Shipping</li>
-            <li class="mb-2">Affiliates</li>
-            <li class="mb-2">Contact</li>
-          </ul>
-        </div>
-
-        <!-- Payment & Shipping Section -->
-        <div class="col-12 col-md-3 mb-4">
-          <h5 class="font-weight-bold mb-3">PAYMENT & SHIPPING</h5>
-          <ul class="list-unstyled">
-            <li class="mb-2">Terms of Us</li>
-            <li class="mb-2">Payment Methods</li>
-            <li class="mb-2">Shipping Guide</li>
-            <li class="mb-2">Locations We Ship To</li>
-            <li class="mb-2">Estimated Delivery Time</li>
-          </ul>
-        </div>
-      </div>
-
-      <!-- Privacy Policy & Terms Section -->
-      <div class="border-top mt-4 pt-3 text-center">
-        <p class="text-muted mb-0">Privacy Policy | Terms & Conditions</p>
       </div>
     </div>
+
+    <!-- Back to top button -->
   </footer>
 </template>
 
+<script>
+export default {
+  name: "GlownFooter",
+  methods: {
+    scrollToTop() {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    },
+  },
+};
+</script>
+
 <style scoped>
+/* Custom styles to complement Bootstrap */
 footer {
-  background-color: #222;
-  color: #fff;
-  margin-top: 20px; /* Điều chỉnh padding-top thay vì margin-top */
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
-footer .container {
-  max-width: 1200px;
+
+.qr-code {
+  border: 1px solid #ccc;
 }
-footer h5 {
-  font-size: 1.1rem;
-  font-weight: bold;
+
+/* Hover effects for links */
+a.text-white:hover {
+  opacity: 0.8;
+  text-decoration: underline !important;
 }
-footer ul {
-  padding-left: 0;
+
+/* Back to top button hover effect */
+.btn-dark:hover {
+  background-color: #343a40;
 }
-footer ul li {
-  font-size: 0.9rem;
-  margin-bottom: 10px;
-}
-footer .text-light {
-  color: #ffffff !important;
-}
-footer .text-pink {
-  color: #ff69b4 !important;
-}
-@media (max-width: 768px) {
+
+/* Hide footer on small screens */
+@media screen and (max-width: 760px) {
   footer {
     display: none;
   }

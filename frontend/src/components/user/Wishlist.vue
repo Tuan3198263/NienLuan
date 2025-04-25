@@ -57,7 +57,7 @@
                     </div>
                   </div>
                   <strong class="text-danger font-weight-bold mt-1">
-                    {{ formatPrice(product.price) }} đ
+                    {{ formatPrice(product.price) }} VNĐ
                   </strong>
                 </div>
               </div>
@@ -119,7 +119,7 @@ export default {
     const toast = useToast(); // Khởi tạo toast
     const products = ref([]);
     const currentPage = ref(1);
-    const itemsPerPage = 3; // Số sản phẩm trên mỗi trang
+    const itemsPerPage = 6; // Thay đổi số sản phẩm trên mỗi trang thành 6
 
     const formatPrice = (price) => {
       return new Intl.NumberFormat("vi-VN").format(price); // Định dạng theo kiểu tiền Việt Nam

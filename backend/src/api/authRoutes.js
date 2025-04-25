@@ -22,7 +22,7 @@ router.put('/admin/update-user/:userId', authController.updateUserByAdmin);
 // Xóa người dùng (admin)
 router.delete('/admin/delete-user/:userId', authController.deleteUserByAdmin);
 
-//lấy tất cả người dùng
+//lấy tất cả người dùng(admin)
 router.get('/get-users', authController.getAllUsers);
 
 // API lấy thông tin người dùng (yêu cầu token)
