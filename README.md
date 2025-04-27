@@ -1,2 +1,2 @@
 # NienLuan
-Niên luận ngành KHMT - Wensite bán mỹ phẩm
+Niên luận ngành KHMT - Website bán mỹ phẩm
